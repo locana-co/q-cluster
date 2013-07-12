@@ -1,6 +1,11 @@
+/* Quick clustering algorithm adapted from Dave Bouwman's blog post
+*  http://blog.davebouwman.com/2012/03/24/server-side-clustering-why-you-need-it/
+*
+*/
+
 var qCluster = {};
 
-// NOTE: for this to work, the input point array must be sorted a one-dimensional geographic coordinate notation code, e.g GEOREF
+// NOTE!!!!!: for this to work, the input point array must be sorted by a one-dimensional geographic coordinate notation code, e.g GEOREF
 qCluster.makeClusters = function(pointArr, resolution) {
 	var c,
 		index,
