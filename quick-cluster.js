@@ -1,12 +1,9 @@
-/* Quick clustering algorithm adapted from Dave Bouwman's blog post
-*  http://blog.davebouwman.com/2012/03/24/server-side-clustering-why-you-need-it/
-*
-*/
-
 var qCluster = {};
 
-// NOTE!!!!!: for this to work, the input point array must be sorted by a one-dimensional geographic coordinate notation code, e.g GEOREF
+// NOTE: for this to work, the input point array must be sorted a one-dimensional geographic coordinate notation code, e.g GEOREF
 qCluster.makeClusters = function(pointArr, resolution) {
+	
+	console.log(resolution);
 	var c,
 		index,
 		i;
@@ -42,8 +39,15 @@ qCluster.makeClusters = function(pointArr, resolution) {
 		
 		c = clusters[i];
 		
+		for(j =0, jMax = c.points.length; j < jMax; j++) {
+		
+		c.xSum = c.xSum + c.points[j].X;
+		c.ySum = c.ySum + c.points[j].Y;
+		
+		}
 		c.cX = c.xSum / c.points.length;
 		c.cY = c.ySum / c.points.length;
+		
 		
 		delete c.xSum;
 		delete c.ySum;	
@@ -55,7 +59,7 @@ qCluster.makeClusters = function(pointArr, resolution) {
 qCluster.AddPinsWithinRange = function(points, index, direction, currentCluster, resolution){
 	
 	//Cluster width & heigth are in pixels. So any point within 20 pixels at the zoom level will be clustered.
-    var clusterwidth = 150; //Cluster region width, all pin within this area are clustered
+    var clusterwidth = 100; //Cluster region width, all pin within this area are clustered
 	var finished = false;
     var searchindex = index + direction;
     var pMax = points.length;
@@ -80,8 +84,8 @@ qCluster.AddPinsWithinRange = function(points, index, direction, currentCluster,
                     {
                         //add to cluster
                         currentCluster.points.push(points[searchindex]);
-                      	currentCluster.xSum = currentCluster.xSum + points[index].X;
-                      	currentCluster.ySum = currentCluster.ySum + points[index].Y;
+                      	//currentCluster.xSum = currentCluster.xSum + points[index].X;
+                      	//currentCluster.ySum = currentCluster.ySum + points[index].Y;
                         //this point represents a cluster...
                         currentCluster.c = true;
                         
@@ -99,3 +103,75 @@ qCluster.AddPinsWithinRange = function(points, index, direction, currentCluster,
         
     }	
 };
+
+
+qCluster.Leaflet = {};
+qCluster.Leaflet.isInBounds = function(x, y, buffer, map) {
+	var xmin,
+		xmax,
+		ymin,
+		ymax,
+		bounds;
+	
+	if(isNaN(buffer)) {
+		buffer = 0;
+	}
+	
+	bounds = map.getBounds();
+
+	xmin = L.CRS.EPSG3857.project(bounds._southWest).x - buffer;
+	xmax = L.CRS.EPSG3857.project(bounds._northEast).x + buffer;
+	ymin = L.CRS.EPSG3857.project(bounds._southWest).y - buffer;
+	ymax = L.CRS.EPSG3857.project(bounds._northEast).y + buffer;
+	
+	if(x < xmin || x > xmax || y < ymin || y > ymax) {
+		return false
+	}
+	else {
+		return true;
+	}
+	
+};
+
+qCluster.Leaflet.ClusterLayer =  function(points, mapMngr){
+	
+	var clusters,
+		cnt,
+		divHtml,
+		divClass,
+		myIcon,
+		latlon,
+		marker,
+		markers = [];
+
+	clusters = qCluster.makeClusters(points, mapMngr.getResolution());
+	
+	for(var i = 0, iMax = clusters.length; i < iMax; i++) {
+		
+		if(qCluster.Leaflet.isInBounds(clusters[i].cX, clusters[i].cY, 0, mapMngr.map)) {
+			
+			cnt = clusters[i].points.length;
+			divHtml = '<div><span>' + cnt +'</span></div></div>';
+			divClass = '';
+			
+			if (cnt < 100)
+				divClass = 'leaflet-marker-icon marker-cluster marker-cluster-small';
+			else if (cnt < 1000){
+				divClass = 'leaflet-marker-icon marker-cluster marker-cluster-medium';
+			} 
+			else {
+				divClass = 'leaflet-marker-icon marker-cluster marker-cluster-large';
+			}
+			
+			myIcon = L.divIcon({'className':divClass, 'html': divHtml});
+			
+			latlon =  _Z_Utils.ToGeographic(clusters[i].cX, clusters[i].cY);
+			marker = L.marker(latlon, {icon:myIcon});
+			
+			markers.push(marker);	
+		}
+	}
+		
+	return L.featureGroup(markers);
+};
+
