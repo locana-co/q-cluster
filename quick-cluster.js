@@ -3,7 +3,6 @@ var qCluster = {};
 // NOTE: for this to work, the input point array must be sorted a one-dimensional geographic coordinate notation code, e.g GEOREF
 qCluster.makeClusters = function(pointArr, resolution) {
 	
-	console.log(resolution);
 	var c,
 		index,
 		i;
@@ -53,7 +52,7 @@ qCluster.makeClusters = function(pointArr, resolution) {
 		delete c.ySum;	
 	}
 	
-	return clusters
+	return clusters;
 };
 
 qCluster.AddPinsWithinRange = function(points, index, direction, currentCluster, resolution){
@@ -105,73 +104,7 @@ qCluster.AddPinsWithinRange = function(points, index, direction, currentCluster,
 };
 
 
-qCluster.Leaflet = {};
-qCluster.Leaflet.isInBounds = function(x, y, buffer, map) {
-	var xmin,
-		xmax,
-		ymin,
-		ymax,
-		bounds;
-	
-	if(isNaN(buffer)) {
-		buffer = 0;
-	}
-	
-	bounds = map.getBounds();
 
-	xmin = L.CRS.EPSG3857.project(bounds._southWest).x - buffer;
-	xmax = L.CRS.EPSG3857.project(bounds._northEast).x + buffer;
-	ymin = L.CRS.EPSG3857.project(bounds._southWest).y - buffer;
-	ymax = L.CRS.EPSG3857.project(bounds._northEast).y + buffer;
-	
-	if(x < xmin || x > xmax || y < ymin || y > ymax) {
-		return false
-	}
-	else {
-		return true;
-	}
-	
-};
 
-qCluster.Leaflet.ClusterLayer =  function(points, mapMngr){
-	
-	var clusters,
-		cnt,
-		divHtml,
-		divClass,
-		myIcon,
-		latlon,
-		marker,
-		markers = [];
 
-	clusters = qCluster.makeClusters(points, mapMngr.getResolution());
-	
-	for(var i = 0, iMax = clusters.length; i < iMax; i++) {
-		
-		if(qCluster.Leaflet.isInBounds(clusters[i].cX, clusters[i].cY, 0, mapMngr.map)) {
-			
-			cnt = clusters[i].points.length;
-			divHtml = '<div><span>' + cnt +'</span></div></div>';
-			divClass = '';
-			
-			if (cnt < 100)
-				divClass = 'leaflet-marker-icon marker-cluster marker-cluster-small';
-			else if (cnt < 1000){
-				divClass = 'leaflet-marker-icon marker-cluster marker-cluster-medium';
-			} 
-			else {
-				divClass = 'leaflet-marker-icon marker-cluster marker-cluster-large';
-			}
-			
-			myIcon = L.divIcon({'className':divClass, 'html': divHtml});
-			
-			latlon =  _Z_Utils.ToGeographic(clusters[i].cX, clusters[i].cY);
-			marker = L.marker(latlon, {icon:myIcon});
-			
-			markers.push(marker);	
-		}
-	}
-		
-	return L.featureGroup(markers);
-};
 
