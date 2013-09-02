@@ -1,13 +1,20 @@
 var qCluster = {};
 
-// NOTE: for this to work, the input point array must be sorted a one-dimensional geographic coordinate notation code, e.g GEOREF
-qCluster.makeClusters = function(pointArr, resolution) {
+// NOTE: for this to work, the input point object array must be sorted by a one-dimensional geographic coordinate notation code, e.g GEOREF
+/**
+ * 
+ * @param [{Object}] pointArr - must contain properties x, y (linear units)
+ * @param {Object} resolution - map resolution pixels/per linear distance unit (must be same unit as X,Y)
+ * @param {Object} clusterTolerance - a pixel distance, within which points are clustered
+ */
+qCluster.makeClusters = function(pointArr, resolution, clusterTolerance) {
 	
-	var c,
+	var ctr = 0,
+		c,
 		index,
-		i;
-	var clusters = [];
-	var currentCluster;
+		i,
+		clusters = [],
+		currentCluster;
 	
 	// Make a copy of points array and while doing so add a property 'c' for clustered
 	var points = $.extend(true, [], pointArr, {c:null});
@@ -19,14 +26,15 @@ qCluster.makeClusters = function(pointArr, resolution) {
     	if (!points[index].c) //skip already clustered pins
         {
         	
-        	currentCluster = {'points':[], 'xSum': 0, 'ySum':0, 'cX':null, 'cY':null};
+        	currentCluster = {'id': ctr, 'points':[], 'xSum': 0, 'ySum':0, 'cX':null, 'cY':null};
+        	ctr++;
         	currentCluster.points.push(points[index]);
         	
         	//look backwards in the list for any points within the range, return after we hit a point that exceeds range
-        	qCluster.AddPinsWithinRange(points, index, -1, currentCluster, resolution);
+        	qCluster.AddPinsWithinRange(points, index, -1, currentCluster, resolution, clusterTolerance);
  
             //look forwards in the list for any points within the range, return after we hit a point that exceeds range 
-            qCluster.AddPinsWithinRange(points, index, 1, currentCluster, resolution);
+            qCluster.AddPinsWithinRange(points, index, 1, currentCluster, resolution, clusterTolerance);
  			
  			// Add the cluster to the storage array
  			clusters.push(currentCluster);
@@ -38,16 +46,17 @@ qCluster.makeClusters = function(pointArr, resolution) {
 		
 		c = clusters[i];
 		
+		// Average the x, y coordinates
 		for(j =0, jMax = c.points.length; j < jMax; j++) {
 		
-		c.xSum = c.xSum + c.points[j].X;
-		c.ySum = c.ySum + c.points[j].Y;
+			c.xSum = c.xSum + c.points[j].x;
+			c.ySum = c.ySum + c.points[j].y;
 		
 		}
 		c.cX = c.xSum / c.points.length;
 		c.cY = c.ySum / c.points.length;
 		
-		
+		// delete the coordinate sum properties
 		delete c.xSum;
 		delete c.ySum;	
 	}
@@ -55,57 +64,75 @@ qCluster.makeClusters = function(pointArr, resolution) {
 	return clusters;
 };
 
-qCluster.AddPinsWithinRange = function(points, index, direction, currentCluster, resolution){
+qCluster.AddPinsWithinRange = function(points, index, direction, currentCluster, resolution, tolerance){
 	
-	//Cluster width & heigth are in pixels. So any point within 20 pixels at the zoom level will be clustered.
-    var clusterwidth = 100; //Cluster region width, all pin within this area are clustered
-	var finished = false;
-    var searchindex = index + direction;
-    var pMax = points.length;
+	var clusterwidth,
+		finished,
+		searchindex,
+		pMax,
+		xDis,
+		yDis;
+		
 
+	//Cluster width & heigth are in pixels. So any point within 20 pixels at the zoom level will be clustered.
+    clusterwidth = tolerance; // Cluster region width, all points within this area are clustered
+	finished = false; // flag
+    searchindex = index + direction;
+    pMax = points.length;
+
+	// Loop thru the points array
 	while (!finished)
     {
     	
+    	// Stop if outside array bounds
     	if (searchindex >= pMax || searchindex < 0)
         {
             finished = true;
         }
         else
         {
+        	// continue if this point has not yet been placed into an existing cluster
         	if (!points[searchindex].c)
             {
-                //find distance between two points at specified indexes
-                var xDis = Math.abs(points[searchindex].X - points[index].X) / resolution;
-                var yDis = Math.abs(points[searchindex].Y - points[index].Y) / resolution;
-                if ( xDis < clusterwidth) //within the same x range
+                //find distance between two points ( the initial point and one of the other points 'close' to it).
+                xDis = Math.abs(points[searchindex].x - points[index].x) / resolution;
+                yDis = Math.abs(points[searchindex].y - points[index].y) / resolution;
+                
+                if ( xDis < clusterwidth) // the x distance between the two points is within the cluster tolerance
                 {
-                    if (yDis < clusterwidth) //within the same y range = cluster needed
+                    if (yDis < clusterwidth) // the y distance between the two points is within the cluster tolerance
                     {
                         //add to cluster
                         currentCluster.points.push(points[searchindex]);
-                      	//currentCluster.xSum = currentCluster.xSum + points[index].X;
-                      	//currentCluster.ySum = currentCluster.ySum + points[index].Y;
-                        //this point represents a cluster...
+                      	
+                      	//this point represents a cluster...
                         currentCluster.c = true;
                         
                         points[searchindex].c = true;
 					}
+					else // we have reached a point whose y distance from the initial point is > the cluster tolerance
+					{
+						/* we have reached a point whose y distance from the initial point is > the cluster tolerance
+						/ we assume subsequent points in the list will also be beyond the cluster tolerance since the 
+						/ the list is sorted by location grid (GEOREF)
+						*/
+						finished = true;
+					}
+						
 				}
-				else
+				else // we have reached a point whose x distance from the initial point is > the cluster tolerance
             	{
+					/* We have reached a point whose y distance from the initial point is > the cluster tolerance
+					/ we assume subsequent points in the list will also be beyond the cluster tolerance since the 
+					/ the list is sorted by location grid (GEOREF)
+					*/
                 	finished = true;
             	}
 
             }
+            //increment the search index
        	 	searchindex += direction;
    		}
         
     }	
 };
-
-
-// Add via subtree.
-
-
-
-
