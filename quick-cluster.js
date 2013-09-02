@@ -110,14 +110,7 @@ qCluster.AddPinsWithinRange = function(points, index, direction, currentCluster,
                         
                         points[searchindex].c = true;
 					}
-					else // we have reached a point whose y distance from the initial point is > the cluster tolerance
-					{
-						/* we have reached a point whose y distance from the initial point is > the cluster tolerance
-						/ we assume subsequent points in the list will also be beyond the cluster tolerance since the 
-						/ the list is sorted by location grid (GEOREF)
-						*/
-						finished = true;
-					}
+
 						
 				}
 				else // we have reached a point whose x distance from the initial point is > the cluster tolerance
