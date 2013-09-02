@@ -1,0 +1,11 @@
+
+# Aptana files
+.project
+
+# Mac OSX
+.DS_Store
+
+#Sass
+.sass-cache/*
+css/.sass-cache/*
+.scssc
