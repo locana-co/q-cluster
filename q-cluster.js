@@ -1,4 +1,4 @@
-var qCluster = {};
+var QCluster = {};
 
 // NOTE: for this to work, the input point object array must be sorted by a one-dimensional geographic coordinate notation code, e.g GEOREF
 /**
@@ -7,7 +7,7 @@ var qCluster = {};
  * @param {Object} resolution - map resolution pixels/per linear distance unit (must be same unit as X,Y)
  * @param {Object} clusterTolerance - a pixel distance, within which points are clustered
  */
-qCluster.makeClusters = function(pointArr, resolution, clusterTolerance) {
+QCluster.makeClusters = function(pointArr, resolution, clusterTolerance) {
 	
 	var ctr = 0,
 		c,
@@ -31,10 +31,10 @@ qCluster.makeClusters = function(pointArr, resolution, clusterTolerance) {
         	currentCluster.points.push(points[index]);
         	
         	//look backwards in the list for any points within the range, return after we hit a point that exceeds range
-        	qCluster.AddPinsWithinRange(points, index, -1, currentCluster, resolution, clusterTolerance);
+        	QCluster.AddPinsWithinRange(points, index, -1, currentCluster, resolution, clusterTolerance);
  
             //look forwards in the list for any points within the range, return after we hit a point that exceeds range 
-            qCluster.AddPinsWithinRange(points, index, 1, currentCluster, resolution, clusterTolerance);
+            QCluster.AddPinsWithinRange(points, index, 1, currentCluster, resolution, clusterTolerance);
  			
  			// Add the cluster to the storage array
  			clusters.push(currentCluster);
@@ -64,7 +64,7 @@ qCluster.makeClusters = function(pointArr, resolution, clusterTolerance) {
 	return clusters;
 };
 
-qCluster.AddPinsWithinRange = function(points, index, direction, currentCluster, resolution, tolerance){
+QCluster.AddPinsWithinRange = function(points, index, direction, currentCluster, resolution, tolerance){
 	
 	var clusterwidth,
 		finished,
