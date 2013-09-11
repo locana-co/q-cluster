@@ -200,7 +200,8 @@ QClusterLeafletLayer.Manager.prototype.makeDonuts = function() {
 			for (var k = 0, kMax = clsIdArr.length; k < kMax; k++) {
 					
 				clsId = clsIdArr[k];	
-				
+
+			
 				if(data.hasOwnProperty(clsId)) {
 					data[clsId]['count']++; 
 				}
@@ -219,6 +220,10 @@ QClusterLeafletLayer.Manager.prototype.makeDonuts = function() {
 				}
 				else {
 					
+									
+								if (typeof this.taxClasses.classifications[clsId] === 'undefined') {
+				var stop;
+			}
 					data[clsId] = {
 						'count': 1,
 						'color': this.taxClasses.classifications[clsId].color,
