@@ -3,7 +3,7 @@
 var QClusterLeafletLayer = {};
 
 
-QClusterLeafletLayer.Manager =  function(pointArr, id, map, resolution, opts){
+QClusterLeafletLayer.Manager =  function(pointArr, id, map, opts){
 	
 	this.layer;
 	this.layerId = id;
@@ -12,7 +12,8 @@ QClusterLeafletLayer.Manager =  function(pointArr, id, map, resolution, opts){
 	this.clusters = {};
 	this.useClassificationColors;
 	
-	var options,
+	var self,
+		options,
 		clusters,
 		cnt,
 		divHtml,
@@ -23,6 +24,8 @@ QClusterLeafletLayer.Manager =  function(pointArr, id, map, resolution, opts){
 		clusterMarker,
 		classificationId,
 		clusterMarkers = [];
+	
+	self = this;
 		
 	options = opts || {};
 	
@@ -38,12 +41,19 @@ QClusterLeafletLayer.Manager =  function(pointArr, id, map, resolution, opts){
 	this.hasSingleClick = options.hasSingleClick || false;
 	this.missingClassificationColor = options.missingClassificationColor || '#8b8b8b';
 	
-	this.clusterPoints(resolution);
+	this.clusterPoints();
+	
+	this.map.on('moveend', function(){ 
+			
+		self.map.removeLayer(self.layer);
+		
+		self.clusterPoints();
+	});
 			
 	return this;
 };
 
-QClusterLeafletLayer.Manager.prototype.clusterPoints = function(resolution) {
+QClusterLeafletLayer.Manager.prototype.clusterPoints = function() {
 	
 		var clusters,
 		cnt,
@@ -59,7 +69,7 @@ QClusterLeafletLayer.Manager.prototype.clusterPoints = function(resolution) {
 	var self = this;
 	
 	// Use qCluster library to cluster points
-	clusters = QCluster.makeClusters(this.pointData, resolution, this.clusterTolerance);
+	clusters = QCluster.makeClusters(this.pointData, this.getResolution(), this.clusterTolerance);
 	
 	// Now create the cluster markers for the clusters qCluster returned
 	for(var i = 0, iMax = clusters.length; i < iMax; i++) {
@@ -145,23 +155,7 @@ QClusterLeafletLayer.Manager.prototype.clusterPoints = function(resolution) {
 		default:
 	}	
 	
-};
-
-QClusterLeafletLayer.Manager.prototype.webMercatorToGeographic = function(mercatorX, mercatorY) {
-	
-	var x,
-		y,
-		lon,
-		lat;
-	
-    if ((Math.abs(mercatorX) > 20037508.3427892) || (Math.abs(mercatorY) > 20037508.3427892)){
-        return;
-	}
-	
-    lon = ((mercatorX / 6378137.0) * 57.295779513082323) - (Math.floor( ( (((mercatorX / 6378137.0) * 57.295779513082323) + 180.0) / 360.0)) * 360.0);
-    lat = (1.5707963267948966 - (2.0 * Math.atan(Math.exp((-1.0 * mercatorY) / 6378137.0)))) * 57.295779513082323;
-	
-    return [lat, lon];
+	amplify.publish('clusteringFinished');
 };
 
 // Add D3 donut charts to leaflet cluster icons
@@ -194,13 +188,11 @@ QClusterLeafletLayer.Manager.prototype.makeDonuts = function() {
 		// Loop through the clusters points and summarize the points by counts per unique attribute (stored in the 's' property)
 		for (var j = 0, jMax = points.length; j < jMax; j ++) {
 			
-
 			clsIdArr = points[j].cl_id.toString().split(',');
 			
 			for (var k = 0, kMax = clsIdArr.length; k < kMax; k++) {
 					
 				clsId = clsIdArr[k];	
-
 			
 				if(data.hasOwnProperty(clsId)) {
 					data[clsId]['count']++; 
@@ -220,18 +212,13 @@ QClusterLeafletLayer.Manager.prototype.makeDonuts = function() {
 				}
 				else {
 					
-									
-								if (typeof this.taxClasses.classifications[clsId] === 'undefined') {
-				var stop;
-			}
 					data[clsId] = {
 						'count': 1,
 						'color': this.taxClasses.classifications[clsId].color,
 						'alias': this.taxClasses.classifications[clsId].alias
 						};
 				}
-			
-			
+
 			}
 	
 		}
@@ -335,6 +322,39 @@ QClusterLeafletLayer.Manager.prototype.isInBounds = function(x, y) {
 		return true;
 	}
 	
+};
+
+QClusterLeafletLayer.Manager.prototype.getResolution = function() {
+	
+	var xmin,
+		xmax,
+		bounds,
+		mapWidth;
+				
+	bounds = this.map.getBounds();
+	mapWidth = this.map.getSize().x;
+
+	xmin = L.CRS.EPSG3857.project(bounds._southWest).x;
+	xmax = L.CRS.EPSG3857.project(bounds._northEast).x;
+		
+	return (xmax - xmin)/mapWidth; // meters/pixel
+};
+
+QClusterLeafletLayer.Manager.prototype.webMercatorToGeographic = function(mercatorX, mercatorY) {
+	
+	var x,
+		y,
+		lon,
+		lat;
+	
+    if ((Math.abs(mercatorX) > 20037508.3427892) || (Math.abs(mercatorY) > 20037508.3427892)){
+        return;
+	}
+	
+    lon = ((mercatorX / 6378137.0) * 57.295779513082323) - (Math.floor( ( (((mercatorX / 6378137.0) * 57.295779513082323) + 180.0) / 360.0)) * 360.0);
+    lat = (1.5707963267948966 - (2.0 * Math.atan(Math.exp((-1.0 * mercatorY) / 6378137.0)))) * 57.295779513082323;
+	
+    return [lat, lon];
 };
 
 QClusterLeafletLayer.makeTaxClassifications = function(taxClassData, opts) {
