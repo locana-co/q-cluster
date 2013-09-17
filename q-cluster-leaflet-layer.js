@@ -29,7 +29,7 @@ QClusterLeafletLayer.Manager =  function(pointArr, id, map, opts){
 		
 	options = opts || {};
 	
-	this.useClassificationColors = options.clusterClassificationChart || false;
+	this.useClassificationColors = options.useClassificationColors || false;
 	this.clusterClassificationChart = options.clusterClassificationChart || 'none';
 	this.taxClasses = options.taxClasses || null;
 	this.mapEdgeBuffer = options.mapEdgeBuffer || 0;
@@ -39,7 +39,11 @@ QClusterLeafletLayer.Manager =  function(pointArr, id, map, opts){
 	this.clusterClickHandler = options.clusterClickHandler || null;
 	this.hasClusterClick = options.hasClusterClick || true;
 	this.hasSingleClick = options.hasSingleClick || false;
+<<<<<<< HEAD
 	this.missingClassificationColor = options.missingClassificationColor || '#8b8b8b';
+=======
+	this.missingClassificationColor = options.missingClassificationColor || '#000000';
+>>>>>>> 202e31a795b480f86efba0ac44ad891d90300d80
 	
 	this.clusterPoints();
 	
