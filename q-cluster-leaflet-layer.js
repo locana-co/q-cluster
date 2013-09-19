@@ -1,7 +1,6 @@
-// Use this in conjunction with qCluster.js to create a cluster layer on a Leaflet Map; require Leaflet JS lib
+// Use this in conjunction with qCluster.js to create a cluster layer on a Leaflet Map; requires Leaflet JS lib
 // the 'makeDonuts' function (not mandatory to use) requires D3 and jQuery
 var QClusterLeafletLayer = {};
-
 
 QClusterLeafletLayer.Manager =  function(pointArr, id, map, opts){
 	
@@ -77,7 +76,7 @@ QClusterLeafletLayer.Manager.prototype.clusterPoints = function() {
 	
 	// Use qCluster library to cluster points
 	clusters = QCluster.makeClusters(this.pointData, this.getResolution(), this.clusterTolerance);
-	
+	this.clusters = {};
 	// Now create the cluster markers for the clusters qCluster returned
 	for(var i = 0, iMax = clusters.length; i < iMax; i++) {
 		
@@ -88,6 +87,7 @@ QClusterLeafletLayer.Manager.prototype.clusterPoints = function() {
 			this.clusters['cId_' + clusters[i].id] = clusters[i];
 			
 			points = clusters[i].points;
+			
 			// Number of points in each cluster
 			cnt = points.length;
 			
@@ -103,6 +103,7 @@ QClusterLeafletLayer.Manager.prototype.clusterPoints = function() {
 				divClass = divClass + 'marker-cluster-single';
 				classificationId = points[0].cl_id;
 				
+				// Color single points by classification color?
 				if(this.useClassificationColors) {
 					
 					if (typeof this.taxClasses.classifications[classificationId] !== 'undefined') {
@@ -218,7 +219,10 @@ QClusterLeafletLayer.Manager.prototype.makeDonuts = function() {
 					}
 				}
 				else {
-					
+
+if(typeof this.taxClasses.classifications[clsId] === 'undefined'){
+	var stop;
+}					
 					data[clsId] = {
 						'count': 1,
 						'color': this.taxClasses.classifications[clsId].color,
@@ -382,17 +386,14 @@ QClusterLeafletLayer.makeTaxClassifications = function(taxClassData, opts) {
 	
 	options = opts || {};
 	
-	var classificationColorPalette = options.colorPalette || ['#1f77b4','#aec7e8','#ff7f0e', '#ffbb78','#2ca02c', 
-																'#98df8a', '#d62728', '#ff9896', '#9467bd','#c5b0d5',
-																'#8c564b', '#c49c94', '#e377c2', '#f7b6d2', '#7f7f7f',
-																'#c7c7c7', '#bcbd22', '#dbdb8d', '#17becf', '#9edae5.'];	
+	var classificationColorPalette = options.colorPalette || ['#8b722c','#e7dfc7','#040707','#c96228','#80adc0','#a19788','#ddecf2','#9e0000','#03671f','#8e2b5c','#e13066','#5c8276','#efa0cb','#62517b','#2c688b','#56c2a7','#e1df2f','#ed3333','#e69890','#545454'];	
 	
 	// Loop thru each taxonomy
 	_.each(taxClassData, function(taxonomy){
 				
 		taxColObj = {
 			
-			'id': taxonomy.value,
+			'value': taxonomy.value,
 		 	'alias': taxonomy.alias,
 		 	'active': false,
 		 	'classifications' : {},
@@ -401,39 +402,36 @@ QClusterLeafletLayer.makeTaxClassifications = function(taxClassData, opts) {
 		
 		
 		// Loop thru each classification
-		_.each(taxonomy.childNode, function(classification, i){
+		_.each(taxonomy.classifications, function(classification, i){
 			
-			if (i > classificationColorPalette.length - 1) {
-				
-				index = (i % classificationColorPalette.length) - 1;
-				color = classificationColorPalette[index];
-			}
-			else {
-				color = classificationColorPalette[i];
-			}
-			
-			
-			taxColObj.classifications[classification.value] = {
-				'id': classification.value,
+			var classificationObj = {
+				'value': classification.value,
 				'alias': classification.alias, 
-				'color': color, 
+				'color': classification.color, 
 				'count': 0, 
 				'otherSums':{}
-				};
+			};
 			
-			taxColObj.classificationArr.push({
-				'id': classification.value,
-				'alias': classification.alias, 
-				'color': color, 
-				'count': 0, 
-				'otherSums':{}
-				});
+			if(typeof classification.color === 'undefined' || classification.color === null) {
+				if (i > classificationColorPalette.length - 1) {
+					
+					index = (i % classificationColorPalette.length) - 1;
+					classificationObj.color = classificationColorPalette[index];
+				}
+				else {
+					classificationObj.color = classificationColorPalette[i];
+				}				
+			}
+			
+			taxColObj.classifications[classification.value] = classificationObj;
+			
+			taxColObj.classificationArr.push(classificationObj);
 		});
 		
 		keyValues[taxonomy.value] = taxColObj;
 		collection.push(taxColObj);
 	});
 	
-	return {'collection': collection, 'keyValues' : keyValues};
+	return {'objArray': collection, 'keyValues' : keyValues};
 	
 };
