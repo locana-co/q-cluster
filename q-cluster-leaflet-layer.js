@@ -10,6 +10,7 @@ QClusterLeafletLayer.Manager =  function(pointArr, id, map, opts){
 	this.map = map;
 	this.clusters = {};
 	this.useClassificationColors;
+	this.activeClusterLatlng = null;
 	
 	var self,
 		options,
@@ -38,14 +39,24 @@ QClusterLeafletLayer.Manager =  function(pointArr, id, map, opts){
 	this.clusterClickHandler = options.clusterClickHandler || null;
 	this.hasClusterClick = options.hasClusterClick || true;
 	this.hasSingleClick = options.hasSingleClick || false;
+	this.clickHandler = options.clickHandler || null;
 	this.missingClassificationColor = options.missingClassificationColor || '#000000';
 	
 	this.clusterPoints();
 	
-	//this.map.off('moveend', this.mapMove, this);
-	
 	this.map.on('moveend', this.mapMove, this);
-			
+	
+	this.map.on('click', function(){
+		this.activeClusterLatlng = null;
+		$('.leaflet-marker-pane .activeMarker').toggleClass('activeMarker', false);
+		amplify.publish('activeClusterRemoved');
+	}, this);
+	
+	amplify.subscribe('removeActiveCluster', this, function(){
+		this.activeClusterLatlng = null;
+		$('.leaflet-marker-pane .activeMarker').toggleClass('activeMarker', false);
+	});
+		
 	return this;
 };
 
@@ -77,6 +88,7 @@ QClusterLeafletLayer.Manager.prototype.clusterPoints = function() {
 	// Use qCluster library to cluster points
 	clusters = QCluster.makeClusters(this.pointData, this.getResolution(), this.clusterTolerance);
 	this.clusters = {};
+	
 	// Now create the cluster markers for the clusters qCluster returned
 	for(var i = 0, iMax = clusters.length; i < iMax; i++) {
 		
@@ -139,7 +151,9 @@ QClusterLeafletLayer.Manager.prototype.clusterPoints = function() {
 					clusterMarker['l_ids'].push(points[j].l_id);
 				}
 				
-				clusterMarker.on('click', this.clickHandler, clusterMarker);
+				if(this.clickHandler){
+					clusterMarker.on('click', this.clickHandler, this);
+				}
 			}
 			
 			// Store it in an array
@@ -163,6 +177,9 @@ QClusterLeafletLayer.Manager.prototype.clusterPoints = function() {
 		default:
 	}	
 	
+	if(this.activeClusterLatlng) {
+		this.markActiveCluster();
+	}
 	amplify.publish('clusteringFinished');
 };
 
@@ -219,10 +236,7 @@ QClusterLeafletLayer.Manager.prototype.makeDonuts = function() {
 					}
 				}
 				else {
-
-if(typeof this.taxClasses.classifications[clsId] === 'undefined'){
-	var stop;
-}					
+			
 					data[clsId] = {
 						'count': 1,
 						'color': this.taxClasses.classifications[clsId].color,
@@ -349,6 +363,21 @@ QClusterLeafletLayer.Manager.prototype.getResolution = function() {
 	xmax = L.CRS.EPSG3857.project(bounds._northEast).x;
 		
 	return (xmax - xmin)/mapWidth; // meters/pixel
+};
+
+QClusterLeafletLayer.Manager.prototype.markActiveCluster = function(clusterLatLng) {
+	
+
+		for(var i in this.layer._layers) {
+		
+			var latlng = this.layer._layers[i]._latlng;
+			
+			if(latlng.lat === this.activeClusterLatlng.lat && latlng.lng === this.activeClusterLatlng.lng ) {
+				$(this.layer._layers[i]._icon).toggleClass('activeMarker', true);
+			}
+		}
+
+	
 };
 
 QClusterLeafletLayer.Manager.prototype.webMercatorToGeographic = function(mercatorX, mercatorY) {
