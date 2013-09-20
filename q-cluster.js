@@ -19,7 +19,10 @@ QCluster.makeClusters = function(pointArr, resolution, clusterTolerance, mapBoun
 	// Make a copy of points array and while doing so add a property 'c' for clustered
 	var points = pointArr;//$.extend(true, [], pointArr, {c:null});
 	
-	_.each(points, function(point){point.c = null;});
+	for (var i = 0, iMax = points.length; i < iMax; i++) {
+		points[i]['c'] = null
+	}
+
 	// loop thru the point array
 	for (index = 0, indexMax = points.length; index < indexMax; index++)
     {
