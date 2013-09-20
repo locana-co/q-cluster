@@ -207,9 +207,7 @@ QClusterLeafletLayer.Manager.prototype.makeDonuts = function() {
 	// Loop thru the this.clusters object    
 	for (var i in this.clusters){
 		
-		data = {
-			
-		};
+		data = {};
 		
 		points = this.clusters[i].points;
 		
