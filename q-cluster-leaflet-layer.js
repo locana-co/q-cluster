@@ -33,7 +33,6 @@ QClusterLeafletLayer.Manager =  function(pointArr, id, map, opts){
 	this.clusterClassificationChart = options.clusterClassificationChart || 'none';
 	this.taxClasses = options.taxClasses || null;
 	this.mapEdgeBuffer = options.mapEdgeBuffer || 0;
-	
 	this.clusterTolerance = options.clusterTolerance || 100;
 	this.clusterCssClass = options.clusterCssClass || '';
 	this.clusterClickHandler = options.clusterClickHandler || null;
@@ -42,19 +41,23 @@ QClusterLeafletLayer.Manager =  function(pointArr, id, map, opts){
 	this.clickHandler = options.clickHandler || null;
 	this.missingClassificationColor = options.missingClassificationColor || '#000000';
 	
+	// Do the clustering
 	this.clusterPoints();
 	
+	//  When the map pans or zooms
 	this.map.on('moveend', this.mapMove, this);
 	
+	// When map is clicked, we clear the active marker
 	this.map.on('click', function(){
-		this.activeClusterLatlng = null;
-		$('.leaflet-marker-pane .activeMarker').toggleClass('activeMarker', false);
-		amplify.publish('activeClusterRemoved');
+		// Remove the active marker and publish notification
+		this.removeActiveCluster(true);
 	}, this);
 	
+	// Listen for removeActiveCluster notifications
 	amplify.subscribe('removeActiveCluster', this, function(){
-		this.activeClusterLatlng = null;
-		$('.leaflet-marker-pane .activeMarker').toggleClass('activeMarker', false);
+		// Remove the active marker
+		this.removeActiveCluster(false);
+
 	});
 		
 	return this;
@@ -365,19 +368,36 @@ QClusterLeafletLayer.Manager.prototype.getResolution = function() {
 	return (xmax - xmin)/mapWidth; // meters/pixel
 };
 
-QClusterLeafletLayer.Manager.prototype.markActiveCluster = function(clusterLatLng) {
+QClusterLeafletLayer.Manager.prototype.markActiveCluster = function() {
 	
-
-		for(var i in this.layer._layers) {
+		// When the user click on a cluster that can be made active (i.e., less than 20 points), the map centers on that cluster
+		// Of course, when that happens, the old clusters/layer gets destoyed and remade.  Thus we lose reference to the cluster
+		// that we clicked to make active.  However, the lat/lng of the orginally clicked cluster, will be identical to the new
+		// cluster that should be made active
 		
+		// Loop thru all the 'markers' (aka _layers) in the map layer 
+		for(var i in this.layer._layers) {
+			
 			var latlng = this.layer._layers[i]._latlng;
 			
+			// If this marker's latlng === the clicked cluster latlng, add active-marker class to the divIcon
 			if(latlng.lat === this.activeClusterLatlng.lat && latlng.lng === this.activeClusterLatlng.lng ) {
-				$(this.layer._layers[i]._icon).toggleClass('activeMarker', true);
+				$(this.layer._layers[i]._icon).toggleClass('active-marker', true);
 			}
 		}
 
+};
+
+QClusterLeafletLayer.Manager.prototype.removeActiveCluster = function(publishRemovalNotice) {
 	
+		this.activeClusterLatlng = null;
+		
+		$('.leaflet-marker-pane .active-marker').toggleClass('active-marker', false);
+		
+		if(publishRemovalNotice === true){
+			// Send a message that the active cluster has been removed
+			amplify.publish('activeClusterRemoved');
+		}
 };
 
 QClusterLeafletLayer.Manager.prototype.webMercatorToGeographic = function(mercatorX, mercatorY) {
