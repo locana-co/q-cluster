@@ -89,7 +89,7 @@ QClusterLeafletLayer.Manager.prototype.clusterPoints = function() {
 	}
 	
 	// Use qCluster library to cluster points
-	clusters = QCluster.makeClusters(this.pointData, this.getResolution(), this.clusterTolerance);
+	clusters = QCluster.makeClusters(this.pointData, this.getResolution(), this.clusterTolerance, this.mapBounds());
 	this.clusters = {};
 	
 	// Now create the cluster markers for the clusters qCluster returned
@@ -347,6 +347,24 @@ QClusterLeafletLayer.Manager.prototype.isInBounds = function(x, y) {
 	else {
 		return true;
 	}
+	
+};
+
+QClusterLeafletLayer.Manager.prototype.mapBounds = function(x, y) {
+	var xmin,
+		xmax,
+		ymin,
+		ymax,
+		bounds;
+	
+	bounds = this.map.getBounds();
+
+	xmin = L.CRS.EPSG3857.project(bounds._southWest).x - this.mapEdgeBuffer;
+	xmax = L.CRS.EPSG3857.project(bounds._northEast).x + this.mapEdgeBuffer;
+	ymin = L.CRS.EPSG3857.project(bounds._southWest).y - this.mapEdgeBuffer;
+	ymax = L.CRS.EPSG3857.project(bounds._northEast).y + this.mapEdgeBuffer;
+	
+	return {'xmin': xmin, 'xmax': xmax, 'ymin': ymin, 'ymax': ymax };
 	
 };
 

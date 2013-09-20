@@ -7,7 +7,7 @@ var QCluster = {};
  * @param {Object} resolution - map resolution pixels/per linear distance unit (must be same unit as X,Y)
  * @param {Object} clusterTolerance - a pixel distance, within which points are clustered
  */
-QCluster.makeClusters = function(pointArr, resolution, clusterTolerance) {
+QCluster.makeClusters = function(pointArr, resolution, clusterTolerance, mapBounds) {
 	
 	var ctr = 0,
 		c,
@@ -17,13 +17,14 @@ QCluster.makeClusters = function(pointArr, resolution, clusterTolerance) {
 		currentCluster;
 	
 	// Make a copy of points array and while doing so add a property 'c' for clustered
-	var points = $.extend(true, [], pointArr, {c:null});
-
+	var points = pointArr;//$.extend(true, [], pointArr, {c:null});
+	
+	_.each(points, function(point){point.c = null;});
 	// loop thru the point array
 	for (index = 0, indexMax = points.length; index < indexMax; index++)
     {
     	
-    	if (!points[index].c) //skip already clustered pins
+    	if (!points[index].c && QCluster.WithinMapBounds(points[index], mapBounds)) //skip already clustered pins
         {
         	
         	currentCluster = {'id': ctr, 'points':[], 'xSum': 0, 'ySum':0, 'cX':null, 'cY':null};
@@ -63,6 +64,15 @@ QCluster.makeClusters = function(pointArr, resolution, clusterTolerance) {
 	
 	return clusters;
 };
+
+QCluster.WithinMapBounds = function(point, mapBounds) {
+	if(point.x > mapBounds.xmax || point.x < mapBounds.xmin || point.y > mapBounds.ymax || point.y < mapBounds.ymin ) {
+		return false;
+	}
+	else {
+		return true;
+	}
+}
 
 QCluster.AddPinsWithinRange = function(points, index, direction, currentCluster, resolution, tolerance){
 	
@@ -129,3 +139,4 @@ QCluster.AddPinsWithinRange = function(points, index, direction, currentCluster,
         
     }	
 };
+
