@@ -32,6 +32,7 @@ QClusterLeafletLayer.Manager =  function(pointArr, id, map, opts){
 	this.useClassificationColors = options.useClassificationColors || false;
 	this.clusterClassificationChart = options.clusterClassificationChart || 'none';
 	this.taxClasses = options.taxClasses || null;
+	this.reportingClasses = options.taxClasses.classifications || null;
 	this.mapEdgeBuffer = options.mapEdgeBuffer || 0;
 	this.clusterTolerance = options.clusterTolerance || 100;
 	this.clusterCssClass = options.clusterCssClass || '';
@@ -116,14 +117,14 @@ QClusterLeafletLayer.Manager.prototype.clusterPoints = function() {
 			if (cnt === 1) {
 				divHtml = '<div style="background-color: ' + this.missingClassificationColor + '"><div class="marker-single-default"><span>' + cnt +'</span></div></div></div>';
 				divClass = divClass + 'marker-cluster-single';
-				classificationId = points[0].cl_id;
+				classificationIds = points[0].c_ids.toString().split(',');
 				
 				// Color single points by classification color?
 				if(this.useClassificationColors) {
 					
-					if (typeof this.taxClasses.classifications[classificationId] !== 'undefined') {
+					if (typeof this.reportingClasses[classificationIds[0]] !== 'undefined') {
 
-						divHtml = divHtml.replace(this.missingClassificationColor, this.taxClasses.classifications[classificationId].color);
+						divHtml = divHtml.replace(this.missingClassificationColor, this.reportingClasses[classificationId].color);
 					}
 				}		
 			}
@@ -183,7 +184,7 @@ QClusterLeafletLayer.Manager.prototype.clusterPoints = function() {
 	if(this.activeClusterLatlng) {
 		this.markActiveCluster();
 	}
-	amplify.publish('clusteringFinished');
+	//amplify.publish('clusteringFinished');
 };
 
 // Add D3 donut charts to leaflet cluster icons
@@ -214,7 +215,7 @@ QClusterLeafletLayer.Manager.prototype.makeDonuts = function() {
 		// Loop through the clusters points and summarize the points by counts per unique attribute (stored in the 's' property)
 		for (var j = 0, jMax = points.length; j < jMax; j ++) {
 			
-			clsIdArr = points[j].cl_id.toString().split(',');
+			clsIdArr = points[j].c_ids.toString().split(',');
 			
 			for (var k = 0, kMax = clsIdArr.length; k < kMax; k++) {
 					
@@ -240,8 +241,8 @@ QClusterLeafletLayer.Manager.prototype.makeDonuts = function() {
 			
 					data[clsId] = {
 						'count': 1,
-						'color': this.taxClasses.classifications[clsId].color,
-						'alias': this.taxClasses.classifications[clsId].alias
+						'color': this.reportingClasses[clsId].color,
+						'alias': this.reportingClasses[clsId].alias
 						};
 				}
 
