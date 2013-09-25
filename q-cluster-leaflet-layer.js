@@ -33,7 +33,7 @@ QClusterLeafletLayer.Manager =  function(pointArr, id, map, opts){
 	this.clusterClassificationChart = options.clusterClassificationChart || 'none';
 	this.taxClasses = options.taxClasses || null;
 	this.reportingClasses = options.taxClasses.classifications || null;
-	this.mapEdgeBuffer = options.mapEdgeBuffer || 0;
+	this.mapEdgeBuffer = options.mapEdgeBuffer || 100;
 	this.clusterTolerance = options.clusterTolerance || 100;
 	this.clusterCssClass = options.clusterCssClass || '';
 	this.clusterClickHandler = options.clusterClickHandler || null;
@@ -124,7 +124,7 @@ QClusterLeafletLayer.Manager.prototype.clusterPoints = function() {
 					
 					if (typeof this.reportingClasses[classificationIds[0]] !== 'undefined') {
 
-						divHtml = divHtml.replace(this.missingClassificationColor, this.reportingClasses[classificationId].color);
+						divHtml = divHtml.replace(this.missingClassificationColor, this.reportingClasses[classificationIds[0]].color);
 					}
 				}		
 			}
@@ -333,14 +333,16 @@ QClusterLeafletLayer.Manager.prototype.isInBounds = function(x, y) {
 		xmax,
 		ymin,
 		ymax,
-		bounds;
+		bounds,
+		resolution;
 	
 	bounds = this.map.getBounds();
-
-	xmin = L.CRS.EPSG3857.project(bounds._southWest).x - this.mapEdgeBuffer;
-	xmax = L.CRS.EPSG3857.project(bounds._northEast).x + this.mapEdgeBuffer;
-	ymin = L.CRS.EPSG3857.project(bounds._southWest).y - this.mapEdgeBuffer;
-	ymax = L.CRS.EPSG3857.project(bounds._northEast).y + this.mapEdgeBuffer;
+	resolution = this.getResolution();
+	
+	xmin = L.CRS.EPSG3857.project(bounds._southWest).x - this.mapEdgeBuffer * resolution;
+	xmax = L.CRS.EPSG3857.project(bounds._northEast).x + this.mapEdgeBuffer * resolution;
+	ymin = L.CRS.EPSG3857.project(bounds._southWest).y - this.mapEdgeBuffer * resolution;
+	ymax = L.CRS.EPSG3857.project(bounds._northEast).y + this.mapEdgeBuffer * resolution;
 	
 	if(x < xmin || x > xmax || y < ymin || y > ymax) {
 		return false
@@ -356,14 +358,15 @@ QClusterLeafletLayer.Manager.prototype.mapBounds = function(x, y) {
 		xmax,
 		ymin,
 		ymax,
-		bounds;
+		bounds,
+		resolution;
 	
 	bounds = this.map.getBounds();
-
-	xmin = L.CRS.EPSG3857.project(bounds._southWest).x - this.mapEdgeBuffer;
-	xmax = L.CRS.EPSG3857.project(bounds._northEast).x + this.mapEdgeBuffer;
-	ymin = L.CRS.EPSG3857.project(bounds._southWest).y - this.mapEdgeBuffer;
-	ymax = L.CRS.EPSG3857.project(bounds._northEast).y + this.mapEdgeBuffer;
+	resolution = this.getResolution();
+	xmin = L.CRS.EPSG3857.project(bounds._southWest).x - this.mapEdgeBuffer * resolution;
+	xmax = L.CRS.EPSG3857.project(bounds._northEast).x + this.mapEdgeBuffer * resolution;
+	ymin = L.CRS.EPSG3857.project(bounds._southWest).y - this.mapEdgeBuffer * resolution;
+	ymax = L.CRS.EPSG3857.project(bounds._northEast).y + this.mapEdgeBuffer * resolution;
 	
 	return {'xmin': xmin, 'xmax': xmax, 'ymin': ymin, 'ymax': ymax };
 	
