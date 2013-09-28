@@ -66,13 +66,14 @@ QClusterLeafletLayer.Manager =  function(pointArr, id, map, opts){
 
 QClusterLeafletLayer.Manager.prototype.mapMove = function(){
 	
-	if($(this.map._container).is(":visible")) {
+	if(!$(this.map._container).is(":visible")) {
+		return;
+	}
 		
 		this.map.removeLayer(this.layer);
 		
 	    this.clusterPoints();
-	}
-	//
+
 };
 
 QClusterLeafletLayer.Manager.prototype.clusterPoints = function() {
@@ -89,6 +90,10 @@ QClusterLeafletLayer.Manager.prototype.clusterPoints = function() {
 		clusterMarkers = [];
 	
 	var self = this;
+	
+	if(!$(this.map._container).is(":visible")) {
+		return;
+	}
 	
 	if(typeof this.layer !== 'undefined') {
 		this.map.removeLayer(this.layer);
