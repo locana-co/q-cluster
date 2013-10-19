@@ -472,8 +472,8 @@ QClusterLeafletLayer.makeTaxClassifications = function(taxClassData, opts) {
 				
 		taxColObj = {
 			
-			'value': taxonomy.value,
-		 	'alias': taxonomy.alias,
+			'value': taxonomy.t_id,
+		 	'alias': taxonomy.name,
 		 	'active': false,
 		 	'classifications' : {},
 		 	'classificationArr': []
@@ -484,8 +484,8 @@ QClusterLeafletLayer.makeTaxClassifications = function(taxClassData, opts) {
 		_.each(taxonomy.classifications, function(classification, i){
 			
 			var classificationObj = {
-				'value': classification.value,
-				'alias': classification.alias, 
+				'value': classification.c_id,
+				'alias': classification.name, 
 				'color': classification.color, 
 				'count': 0, 
 				'otherSums':{}
@@ -502,12 +502,12 @@ QClusterLeafletLayer.makeTaxClassifications = function(taxClassData, opts) {
 				}				
 			}
 			
-			taxColObj.classifications[classification.value] = classificationObj;
+			taxColObj.classifications[classificationObj.value] = classificationObj;
 			
 			taxColObj.classificationArr.push(classificationObj);
 		});
 		
-		keyValues[taxonomy.value] = taxColObj;
+		keyValues[taxColObj.value] = taxColObj;
 		collection.push(taxColObj);
 	});
 	
