@@ -126,7 +126,7 @@ QClusterLeafletLayer.Manager.prototype.clusterPoints = function() {
 			
 			// differeniate class names based on cluster point count; clusters greater than one get a 'cluster id' class that matches a key in the this.clusters object
 			if (cnt === 1) {
-				divHtml = '<div style="background-color: ' + this.missingClassificationColor + '"><div class="marker-single-default"><span>' + cnt +'</span></div></div></div>';
+				divHtml = '<div><div style="background-color: initial" class="marker-single-default"><span>' + cnt +'</span></div></div></div>';
 				divClass = divClass + 'marker-cluster-single';
 				classificationIds = points[0].c_ids.toString().split(',');
 				
@@ -135,7 +135,7 @@ QClusterLeafletLayer.Manager.prototype.clusterPoints = function() {
 					
 					if (typeof this.pointClassifications[classificationIds[0]] !== 'undefined') {
 
-						divHtml = divHtml.replace(this.missingClassificationColor, this.pointClassifications[classificationIds[0]].color);
+						divHtml = divHtml.replace('background-color: initial', 'background-color: ' + this.pointClassifications[classificationIds[0]].color);
 					}
 				}		
 			}
