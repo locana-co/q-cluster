@@ -9,7 +9,6 @@ QClusterLeafletLayer.Manager =  function(pointArr, id, map, opts){
 	this.pointData = pointArr;
 	this.map = map;
 	this.clusters = {};
-	this.useClassificationColors;
 	this.activeClusterLatlng = null;
 	
 	var self,
@@ -29,7 +28,11 @@ QClusterLeafletLayer.Manager =  function(pointArr, id, map, opts){
 		
 	options = opts || {};
 	
-	this.useClassificationColors = options.useClassificationColors || false;
+	this.displayState =  this.setBoolOption(options.displayState, true);
+	this.useClassificationColors = this.setBoolOption(options.useClassificationColors, false);
+	this.hasClusterClick = this.setBoolOption(options.hasClusterClick, true);
+	this.hasSingleClick = this.setBoolOption(options.hasSingleClick, false);
+	
 	this.clusterClassificationChart = options.clusterClassificationChart || 'none';
 	this.pointClassifications = options.pointClassifications || null;
 	//this.reportingClasses = options.taxClasses.classifications || null;
@@ -37,8 +40,6 @@ QClusterLeafletLayer.Manager =  function(pointArr, id, map, opts){
 	this.clusterTolerance = options.clusterTolerance || 100;
 	this.clusterCssClass = options.clusterCssClass || '';
 	this.clusterClickHandler = options.clusterClickHandler || null;
-	this.hasClusterClick = options.hasClusterClick || true;
-	this.hasSingleClick = options.hasSingleClick || false;
 	this.clickHandler = options.clickHandler || null;
 	this.missingClassificationColor = options.missingClassificationColor || '#000000';
 	
@@ -178,9 +179,11 @@ QClusterLeafletLayer.Manager.prototype.clusterPoints = function() {
 	// instaniate a leaflet feature group that contains our clusters
 	this.layer = L.featureGroup(clusterMarkers);
 	
-	// Add layer to map
-	this.map.addLayer(this.layer);
-		
+	// Add layer to map if displayState is true
+	if(this.displayState){
+		this.map.addLayer(this.layer);
+	}
+	
 	switch (this.clusterClassificationChart) {
 		
 		case 'donut':
@@ -445,6 +448,19 @@ QClusterLeafletLayer.Manager.prototype.webMercatorToGeographic = function(mercat
     lat = (1.5707963267948966 - (2.0 * Math.atan(Math.exp((-1.0 * mercatorY) / 6378137.0)))) * 57.295779513082323;
 	
     return [lat, lon];
+};
+
+QClusterLeafletLayer.Manager.prototype.setBoolOption = function(option, defaultBool){
+	
+		if(typeof option === 'undefined' ) {
+			return defaultBool;
+		} else if(option !== true && option !== false ) {
+			return defaultBool;
+		} else {
+			return option;
+		}
+	
+	
 };
 
 QClusterLeafletLayer.makeTaxClassifications = function(taxClassData, opts) {
