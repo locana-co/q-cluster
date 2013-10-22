@@ -315,7 +315,7 @@ QClusterLeafletLayer.Manager.prototype.makeDonuts = function() {
 		    	.sort(null);
 		
 		arc = d3.svg.arc()
-		    .innerRadius(radius-radius * this.donutInnerRadiusProportion);
+		    .innerRadius(radius-radius * this.donutInnerRadiusProportion)
 		    .outerRadius(radius);
 		
 		// Note that we add 'clusterDonut' as a selector
