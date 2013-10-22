@@ -32,7 +32,6 @@ QClusterLeafletLayer.Manager =  function(pointArr, id, map, opts){
 	this.useClassificationColors = this.setBoolOption(options.useClassificationColors, false);
 	this.hasClusterClick = this.setBoolOption(options.hasClusterClick, true);
 	this.hasSingleClick = this.setBoolOption(options.hasSingleClick, false);
-	
 	this.clusterClassificationChart = options.clusterClassificationChart || 'none';
 	this.pointClassifications = options.pointClassifications || null;
 	//this.reportingClasses = options.taxClasses.classifications || null;
@@ -41,7 +40,9 @@ QClusterLeafletLayer.Manager =  function(pointArr, id, map, opts){
 	this.clusterCssClass = options.clusterCssClass || '';
 	this.clusterClickHandler = options.clusterClickHandler || null;
 	this.clickHandler = options.clickHandler || null;
-	this.missingClassificationColor = options.missingClassificationColor || '#000000';
+	this.otherClassificationColor = options.otherClassificationColor || '#666666';
+	
+	this.donutInnerRadiusProportion =  options.donutInnerRadiusProportion || 0.4;
 	
 	// Do the clustering
 	this.clusterPoints();
@@ -126,7 +127,7 @@ QClusterLeafletLayer.Manager.prototype.clusterPoints = function() {
 			
 			// differeniate class names based on cluster point count; clusters greater than one get a 'cluster id' class that matches a key in the this.clusters object
 			if (cnt === 1) {
-				divHtml = '<div><div style="background-color: initial" class="marker-single-default"><span>' + cnt +'</span></div></div></div>';
+				divHtml = '<div><div class="marker-single-default"><span>' + cnt +'</span></div></div></div>';
 				divClass = divClass + 'marker-cluster-single';
 				classificationIds = points[0].c_ids.toString().split(',');
 				
@@ -135,7 +136,7 @@ QClusterLeafletLayer.Manager.prototype.clusterPoints = function() {
 					
 					if (typeof this.pointClassifications[classificationIds[0]] !== 'undefined') {
 
-						divHtml = divHtml.replace('background-color: initial', 'background-color: ' + this.pointClassifications[classificationIds[0]].color);
+						divHtml = '<div style="background-color: ' + this.pointClassifications[classificationIds[0]].color + '"><div class="marker-single-default"><span>' + cnt +'</span></div></div></div>';
 					}
 				}		
 			}
@@ -205,6 +206,7 @@ QClusterLeafletLayer.Manager.prototype.makeDonuts = function() {
 	
 	var points,
 		data,
+		tmpDataset,
 		dataset,
 		width,
 	    height,
@@ -228,30 +230,38 @@ QClusterLeafletLayer.Manager.prototype.makeDonuts = function() {
 		// Loop through the clusters points and summarize the points by counts per unique attribute (stored in the 's' property)
 		for (var j = 0, jMax = points.length; j < jMax; j ++) {
 			
+			// Split the comma delimited string of classification ids
 			clsIdArr = points[j].c_ids.toString().split(',');
 			
+			// Loop
 			for (var k = 0, kMax = clsIdArr.length; k < kMax; k++) {
-					
+				
+				// this iteration's classification id	
 				clsId = clsIdArr[k];	
-			
+				
+				// If we have already come across this id before (and started a count of its frequency), increment the count
 				if(data.hasOwnProperty(clsId)) {
 					data[clsId]['count']++; 
 				}
 				else if (clsId === ''){
+					// Null classification id's come through as an empty string because this starts as a comma delimited string
+					//  We're assigning null ids to a pseudo-id of -9999
+					
+					// Increment the count of -9999 
 					if(data.hasOwnProperty('-9999')) {
 						data['-9999']['count']++; 
 					}
 					else {
-						
+						// if this is the first null id, create an object property and start the counter
 						data['-9999'] = {
 						'count': 1,
-						'color': '#8b8b8b',
+						'color': this.otherClassificationColor,
 						'alias': 'Not assigned'
 						};
 					}
 				}
 				else {
-			
+					// if this is the first time we see this id, create an object property and start the counter
 					data[clsId] = {
 						'count': 1,
 						'color': this.pointClassifications[clsId].color,
@@ -263,13 +273,35 @@ QClusterLeafletLayer.Manager.prototype.makeDonuts = function() {
 	
 		}
 
-		// prep dataset for D3
+		// prep dataset for D3; need a temp dataset to deal with merging of data counts for 'other' category
+		tmpDataset = [];
 		dataset = [];
 		
+		// Push properties from object holding the category counts/colors categories into an object array
 		for (var j in data) {
-			dataset.push(data[j]);	
+			tmpDataset.push(data[j]);	
 		}
 		
+		// Create an object that will merge the count from all classification catergories that we've deemed as 'other''
+		var mergedOther = {
+						'count': 0,
+						'color': this.otherClassificationColor,
+						'alias': 'other'
+					};
+		
+		// Merge all 'other' objects; we determine which are 'other' by testing to see if its been assigned the 'other' color		
+		for (var k = 0, kMax = tmpDataset.length; k < kMax; k++) {
+			
+			if(tmpDataset[k].color === this.otherClassificationColor) {
+				mergedOther.count = mergedOther.count + tmpDataset[k].count;
+			} else {
+				dataset.push(tmpDataset[k]);
+			}
+		}
+		
+		// Add the merge objedt to the dataset we will use in donut chart
+		dataset.push(mergedOther);
+
 		// Use jQuery to get this cluster markers height and width (set in the CSS)
 		wrapper = $('.' + i);
 		width = $(wrapper).width();
@@ -283,7 +315,7 @@ QClusterLeafletLayer.Manager.prototype.makeDonuts = function() {
 		    	.sort(null);
 		
 		arc = d3.svg.arc()
-		    .innerRadius(radius-radius/4)
+		    .innerRadius(radius-radius * this.donutInnerRadiusProportion);
 		    .outerRadius(radius);
 		
 		// Note that we add 'clusterDonut' as a selector
@@ -469,19 +501,24 @@ QClusterLeafletLayer.makeTaxClassifications = function(taxClassData, opts) {
 		color,
 		options,
 		index,
-		self;
+		self,
+		classificationColorPalette,
+		maxColors,
+		otherColor;
 	
 	// This will hold the taxonomy-classification objects in array for later use in backbone.js collection
-	 var collection = [];
+	var collection = [];
 	
 	// This will hold the taxonomy-classification objects in an object of key-value pairs
-	 var keyValues = {};
-	
-	
-	
+	var keyValues = {};
+
 	options = opts || {};
 	
-	var classificationColorPalette = options.colorPalette || ['#8b722c','#e7dfc7','#040707','#c96228','#80adc0','#a19788','#ddecf2','#9e0000','#03671f','#8e2b5c','#e13066','#5c8276','#efa0cb','#62517b','#2c688b','#56c2a7','#e1df2f','#ed3333','#e69890','#545454'];	
+	classificationColorPalette = options.colorPalette || ['#8b722c','#e7dfc7','#040707','#c96228','#80adc0','#a19788','#ddecf2','#9e0000','#03671f','#8e2b5c','#e13066','#5c8276','#efa0cb','#62517b','#2c688b','#56c2a7','#e1df2f','#ed3333','#e69890','#545454'];	
+	
+	maxColors = options.maxColors || 50;
+	
+	otherColor = options.otherColor || '#666666';
 	
 	// Loop thru each taxonomy
 	_.each(taxClassData, function(taxonomy){
@@ -492,7 +529,9 @@ QClusterLeafletLayer.makeTaxClassifications = function(taxClassData, opts) {
 		 	'alias': taxonomy.name,
 		 	'active': false,
 		 	'classifications' : {},
-		 	'classificationArr': []
+		 	'classificationArr': [],
+		 	'otherColor': otherColor
+		 	
 		};
 		
 		
@@ -508,13 +547,19 @@ QClusterLeafletLayer.makeTaxClassifications = function(taxClassData, opts) {
 			};
 			
 			if(typeof classification.color === 'undefined' || classification.color === null) {
-				if (i > classificationColorPalette.length - 1) {
+				
+				if (i > maxColors - 1) {
+					classificationObj.color = otherColor;
+				
+				} else if (i > classificationColorPalette.length - 1) {
 					
 					index = (i % classificationColorPalette.length) - 1;
 					classificationObj.color = classificationColorPalette[index];
-				}
-				else {
+				
+				} else {
+					
 					classificationObj.color = classificationColorPalette[i];
+					
 				}				
 			}
 			
