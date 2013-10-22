@@ -123,12 +123,12 @@ QClusterLeafletLayer.Manager.prototype.clusterPoints = function() {
 			divHtml = '<div><span>' + cnt +'</span></div>';
 			
 			// create the class name(s) for the leaflet marker div; the layer id added as the first additional class
-			divClass = this.layerId + ' leaflet-marker-icon marker-cluster ' + this.clusterCssClass;
+			divClass = this.layerId + ' leaflet-marker-icon q-marker-cluster ' + this.clusterCssClass;
 			
 			// differeniate class names based on cluster point count; clusters greater than one get a 'cluster id' class that matches a key in the this.clusters object
 			if (cnt === 1) {
-				divHtml = '<div><div class="marker-single-default"><span>' + cnt +'</span></div></div></div>';
-				divClass = divClass + 'marker-cluster-single';
+				divHtml = '<div><div class="q-marker-single-default"><span>' + cnt +'</span></div></div></div>';
+				divClass = divClass + 'q-marker-cluster-single';
 				classificationIds = points[0].c_ids.toString().split(',');
 				
 				// Color single points by classification color?
@@ -136,17 +136,17 @@ QClusterLeafletLayer.Manager.prototype.clusterPoints = function() {
 					
 					if (typeof this.pointClassifications[classificationIds[0]] !== 'undefined') {
 
-						divHtml = '<div style="background-color: ' + this.pointClassifications[classificationIds[0]].color + '"><div class="marker-single-default"><span>' + cnt +'</span></div></div></div>';
+						divHtml = '<div style="background-color: ' + this.pointClassifications[classificationIds[0]].color + '"><div class="q-marker-single-default"><span>' + cnt +'</span></div></div></div>';
 					}
 				}		
 			}
 			else if (cnt < 100){
-				divClass =  divClass + 'marker-cluster-small cId_' + clusters[i].id;
+				divClass =  divClass + 'q-marker-cluster-small cId_' + clusters[i].id;
 			} else if (cnt < 1000){
-				divClass = divClass + 'marker-cluster-medium cId_' + clusters[i].id;
+				divClass = divClass + 'q-marker-cluster-medium cId_' + clusters[i].id;
 			} 
 			else {
-				divClass = divClass + 'marker-cluster-large cId_' + clusters[i].id;
+				divClass = divClass + 'q-marker-cluster-large cId_' + clusters[i].id;
 			}
 			
 			// set up the custom leaflet marker icon
