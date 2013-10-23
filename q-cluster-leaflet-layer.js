@@ -183,17 +183,19 @@ QClusterLeafletLayer.Manager.prototype.clusterPoints = function() {
 	// Add layer to map if displayState is true
 	if(this.displayState){
 		this.map.addLayer(this.layer);
-	}
+
 	
-	switch (this.clusterClassificationChart) {
+		switch (this.clusterClassificationChart) {
+			
+			case 'donut':
+				this.makeDonuts();
+				break;
+			case 'none':
+				break;
+			default:
+		}	
 		
-		case 'donut':
-			this.makeDonuts();
-			break;
-		case 'none':
-			break;
-		default:
-	}	
+	}
 	
 	if(this.activeClusterLatlng) {
 		this.markActiveCluster();
@@ -233,6 +235,7 @@ QClusterLeafletLayer.Manager.prototype.makeDonuts = function() {
 			// Split the comma delimited string of classification ids
 			clsIdArr = points[j].c_ids.toString().split(',');
 			
+			//console.log(clsIdArr);
 			// Loop
 			for (var k = 0, kMax = clsIdArr.length; k < kMax; k++) {
 				
@@ -303,7 +306,7 @@ QClusterLeafletLayer.Manager.prototype.makeDonuts = function() {
 		dataset.push(mergedOther);
 
 		// Use jQuery to get this cluster markers height and width (set in the CSS)
-		wrapper = $('.' + i);
+		wrapper = $('.'+ this.layerId + '.' + i);
 		width = $(wrapper).width();
 		height = $(wrapper).height();
 		radius =  Math.min(width, height) / 2;
@@ -319,7 +322,7 @@ QClusterLeafletLayer.Manager.prototype.makeDonuts = function() {
 		    .outerRadius(radius);
 		
 		// Note that we add 'clusterDonut' as a selector
-		svg = d3.select('.' + i).append("svg")
+		svg = d3.select('.'+ this.layerId + '.' + i).append("svg")
 			.attr("class", "clusterDonut")
 		    .attr("width", width)
 		    .attr("height", height)
