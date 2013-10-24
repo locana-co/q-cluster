@@ -129,7 +129,9 @@ QClusterLeafletLayer.Manager.prototype.clusterPoints = function() {
 			if (cnt === 1) {
 				divHtml = '<div><div class="q-marker-single-default"><span>' + cnt +'</span></div></div></div>';
 				divClass = divClass + 'q-marker-cluster-single';
-				classificationIds = points[0].c_ids.toString().split(',');
+				
+				// Use color of first reporting id
+				classificationIds = points[0].r_ids.toString().split(',');
 				
 				// Color single points by classification color?
 				if(this.useClassificationColors) {
@@ -219,8 +221,8 @@ QClusterLeafletLayer.Manager.prototype.makeDonuts = function() {
 	    arc,
 	    svg,
 	    path,
-	    clsIdArr,
-	    clsId;
+	    rIdArr,
+	    rId;
 		
 	// Loop thru the this.clusters object    
 	for (var i in this.clusters){
@@ -232,22 +234,21 @@ QClusterLeafletLayer.Manager.prototype.makeDonuts = function() {
 		// Loop through the clusters points and summarize the points by counts per unique attribute (stored in the 's' property)
 		for (var j = 0, jMax = points.length; j < jMax; j ++) {
 			
-			// Split the comma delimited string of classification ids
-			clsIdArr = points[j].c_ids.toString().split(',');
+			// Split the comma delimited string of reporting ids
+			rIdArr = points[j]['r_ids'].toString().split(',');
 			
-			//console.log(clsIdArr);
 			// Loop
-			for (var k = 0, kMax = clsIdArr.length; k < kMax; k++) {
+			for (var k = 0, kMax = rIdArr.length; k < kMax; k++) {
 				
-				// this iteration's classification id	
-				clsId = clsIdArr[k];	
+				// this iteration's reporting id	
+				rId = rIdArr[k];	
 				
 				// If we have already come across this id before (and started a count of its frequency), increment the count
-				if(data.hasOwnProperty(clsId)) {
-					data[clsId]['count']++; 
+				if(data.hasOwnProperty(rId)) {
+					data[rId]['count']++; 
 				}
-				else if (clsId === ''){
-					// Null classification id's come through as an empty string because this starts as a comma delimited string
+				else if (rId === ''){
+					// Null report id's come through as an empty string because this starts as a comma delimited string
 					//  We're assigning null ids to a pseudo-id of -9999
 					
 					// Increment the count of -9999 
@@ -265,10 +266,10 @@ QClusterLeafletLayer.Manager.prototype.makeDonuts = function() {
 				}
 				else {
 					// if this is the first time we see this id, create an object property and start the counter
-					data[clsId] = {
+					data[rId] = {
 						'count': 1,
-						'color': this.pointClassifications[clsId].color,
-						'alias': this.pointClassifications[clsId].alias
+						'color': this.pointClassifications[rId].color,
+						'alias': this.pointClassifications[rId].alias
 						};
 				}
 
