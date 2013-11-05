@@ -34,6 +34,7 @@ QClusterLeafletLayer.Manager =  function(pointArr, id, map, opts){
 	this.hasSingleClick = this.setBoolOption(options.hasSingleClick, false);
 	this.clusterClassificationChart = options.clusterClassificationChart || 'none';
 	this.pointClassifications = options.pointClassifications || null;
+	this.summarizeProperty = 'c_ids';
 	//this.reportingClasses = options.taxClasses.classifications || null;
 	this.mapEdgeBuffer = options.mapEdgeBuffer || 100;
 	this.clusterTolerance = options.clusterTolerance || 100;
@@ -131,7 +132,7 @@ QClusterLeafletLayer.Manager.prototype.clusterPoints = function() {
 				divClass = divClass + 'q-marker-cluster-single';
 				
 				// Use color of first reporting id
-				classificationIds = points[0].r_ids.toString().split(',');
+				classificationIds = points[0][this.summarizeProperty].toString().split(',');
 				
 				// Color single points by classification color?
 				if(this.useClassificationColors) {
@@ -235,7 +236,7 @@ QClusterLeafletLayer.Manager.prototype.makeDonuts = function() {
 		for (var j = 0, jMax = points.length; j < jMax; j ++) {
 			
 			// Split the comma delimited string of reporting ids
-			rIdArr = points[j]['r_ids'].toString().split(',');
+			rIdArr = points[j][this.summarizeProperty].toString().split(',');
 			
 			// Loop
 			for (var k = 0, kMax = rIdArr.length; k < kMax; k++) {
