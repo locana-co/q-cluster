@@ -29,13 +29,13 @@ QClusterLeafletLayer.Manager =  function(pointArr, id, map, opts){
 	options = opts || {};
 	
 	this.displayState =  this.setBoolOption(options.displayState, true);
+	this.mapOrder = options.mapOrder;
 	this.useClassificationColors = this.setBoolOption(options.useClassificationColors, false);
 	this.hasClusterClick = this.setBoolOption(options.hasClusterClick, true);
 	this.hasSingleClick = this.setBoolOption(options.hasSingleClick, false);
 	this.clusterClassificationChart = options.clusterClassificationChart || 'none';
-	this.pointClassifications = options.pointClassifications || null;
-	this.summarizeProperty = 'r_ids';
-	//this.reportingClasses = options.taxClasses.classifications || null;
+	this.dataDictionary = options.dataDictionary || null;
+	this.summarizationProperty = options.summarizationProperty || null;
 	this.mapEdgeBuffer = options.mapEdgeBuffer || 100;
 	this.clusterTolerance = options.clusterTolerance || 100;
 	this.clusterCssClass = options.clusterCssClass || '';
@@ -132,14 +132,14 @@ QClusterLeafletLayer.Manager.prototype.clusterPoints = function() {
 				divClass = divClass + 'q-marker-cluster-single';
 				
 				// Use color of first reporting id
-				classificationIds = points[0][this.summarizeProperty].toString().split(',');
+				classificationIds = points[0][this.summarizationProperty].toString().split(',');
 				
 				// Color single points by classification color?
 				if(this.useClassificationColors) {
 					
-					if (typeof this.pointClassifications[classificationIds[0]] !== 'undefined') {
+					if (typeof this.dataDictionary[classificationIds[0]] !== 'undefined') {
 
-						divHtml = '<div style="background-color: ' + this.pointClassifications[classificationIds[0]].color + '"><div class="q-marker-single-default"><span>' + cnt +'</span></div></div></div>';
+						divHtml = '<div style="background-color: ' + this.dataDictionary[classificationIds[0]].color + '"><div class="q-marker-single-default"><span>' + cnt +'</span></div></div></div>';
 					}
 				}		
 			}
@@ -187,7 +187,7 @@ QClusterLeafletLayer.Manager.prototype.clusterPoints = function() {
 	if(this.displayState){
 		this.map.addLayer(this.layer);
 
-	
+		$('.' + this.layerId).css('z-index', this.mapOrder);
 		switch (this.clusterClassificationChart) {
 			
 			case 'donut':
@@ -205,6 +205,26 @@ QClusterLeafletLayer.Manager.prototype.clusterPoints = function() {
 	}
 	//amplify.publish('clusteringFinished');
 };
+
+QClusterLeafletLayer.Manager.prototype.findMaxMarkerZ = function(){
+
+	var children = $(this.map._mapPane).find('.leaflet-marker-pane').children();
+
+	var maxZ = 0;
+
+	for(var i = children.length-1; i >= 0; i--) {
+		
+		
+		var zIndex = parseInt($(children[i]).css('zIndex'),10);
+
+		if(zIndex > maxZ) {
+			maxZ = zIndex;
+		}
+
+	}
+
+	return maxZ;
+}
 
 // Add D3 donut charts to leaflet cluster icons
 QClusterLeafletLayer.Manager.prototype.makeDonuts = function() {
@@ -236,7 +256,7 @@ QClusterLeafletLayer.Manager.prototype.makeDonuts = function() {
 		for (var j = 0, jMax = points.length; j < jMax; j ++) {
 			
 			// Split the comma delimited string of reporting ids
-			rIdArr = points[j][this.summarizeProperty].toString().split(',');
+			rIdArr = points[j][this.summarizationProperty].toString().split(',');
 			
 			// Loop
 			for (var k = 0, kMax = rIdArr.length; k < kMax; k++) {
@@ -269,8 +289,8 @@ QClusterLeafletLayer.Manager.prototype.makeDonuts = function() {
 					// if this is the first time we see this id, create an object property and start the counter
 					data[rId] = {
 						'count': 1,
-						'color': this.pointClassifications[rId].color,
-						'alias': this.pointClassifications[rId].alias
+						'color': this.dataDictionary[rId].color,
+						'alias': this.dataDictionary[rId].alias
 						};
 				}
 
