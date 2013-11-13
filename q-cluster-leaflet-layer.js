@@ -42,7 +42,6 @@ QClusterLeafletLayer.Manager =  function(pointArr, id, map, opts){
 	this.clusterClickHandler = options.clusterClickHandler || null;
 	this.clickHandler = options.clickHandler || null;
 	this.otherClassificationColor = options.otherClassificationColor || '#666666';
-	
 	this.donutInnerRadiusProportion =  options.donutInnerRadiusProportion || 0.4;
 	
 	// Do the clustering
