@@ -10,7 +10,7 @@ QClusterLeafletLayer.Manager =  function(pointArr, id, map, opts){
 	this.map = map;
 	this.clusters = {};
 	this.activeClusterLatlng = null;
-	
+	  
 	var self,
 		options,
 		clusters,

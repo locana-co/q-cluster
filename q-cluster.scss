@@ -12,6 +12,7 @@ $clusterStroke: 2;
     text-align: center;
     font-size: 9px;
     font-family: 'Gotham-Book';
+      border-radius: 50%;
 }
 
 .q-marker-cluster.active-marker {
@@ -24,9 +25,7 @@ $clusterStroke: 2;
   margin-left: 2px;
   margin-top: 2px;
   text-align: center;
-}
-
-.q-marker-cluster > div {
+  border-radius: 50%;
     background-color:#000;
 }
 
@@ -37,7 +36,7 @@ $clusterStroke: 2;
 
 .q-marker-cluster-single {
   background-color: initial;
-  border-radius: 20px;
+  border-radius: 50%;
   width: $singleClusterDm !important;
   height: $singleClusterDm !important;
   margin-left: $singleClusterDm/-2 !important;
@@ -47,7 +46,6 @@ $clusterStroke: 2;
 .q-marker-cluster-single > div { 
   width: $singleClusterDm - $clusterStroke*2;
   height: $singleClusterDm - $clusterStroke*2;
-  border-radius: 20px;
 }
 
 .q-marker-cluster-single > div > div > span {
@@ -55,7 +53,6 @@ $clusterStroke: 2;
 }
 
 .q-marker-cluster-small {
-  border-radius: 20px;
   width: $smClusterDm !important;
   height: $smClusterDm !important;
   margin-left: $smClusterDm/-2 !important;
@@ -66,7 +63,6 @@ $clusterStroke: 2;
 .q-marker-cluster-small  > div {
   width: $smClusterDm - $clusterStroke*2;
   height: $smClusterDm - $clusterStroke*2;
-  border-radius: 20px;
 }
 
 .q-marker-cluster-small  > div > span {
@@ -74,7 +70,6 @@ $clusterStroke: 2;
 }
 
 .q-marker-cluster-medium {
-  border-radius: 30px;
   width: $mdClusterDm !important;
   height: $mdClusterDm !important;
   margin-left: $mdClusterDm/-2 !important;
@@ -102,7 +97,6 @@ $clusterStroke: 2;
 .q-marker-cluster-large > div {
   width: $lgClusterDm - $clusterStroke*2;
   height:$lgClusterDm - $clusterStroke*2;
-  border-radius: $lgClusterDm;
 }
 
 .q-marker-cluster-large > div > span {
