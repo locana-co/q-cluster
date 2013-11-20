@@ -519,7 +519,7 @@ QClusterLeafletLayer.Manager.prototype.setBoolOption = function(option, defaultB
 	
 };
 
-QClusterLeafletLayer.colorFacetValues = function(facetId, facetName, facetValues, propMap, opts) {
+QClusterLeafletLayer.FacetColorLibrary = function(facetId, facetName, facetValues, propMap, opts) {
 	
 	var color,
 		options,
