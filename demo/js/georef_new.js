@@ -1,6 +1,6 @@
 
 /*   
-       *  The function convertFromGeodetic converts Geodetic (latitude and longitude in radians)
+       *  The function convertFromGeodetic converts Geodetic (latitude and longitude in decimal degress)
        *  coordinates to a GEOREF coordinate string.  Precision specifies the
        *  number of digits in the GEOREF string for latitude and longitude:
        *                                  0 for nearest degree
@@ -37,24 +37,22 @@ function convertMinutesToString(minutes, precision)
 
 function toGeoRef(latitude, longitude, precision){
 
-var long_min,                           /* number: GEOREF longitude minute part   */
-    lat_min,                            /* number: GEOREF latitude minute part    */
-    origin_long,                        /* number: Origin longitude (-180 degrees)*/
-    origin_lat,                         /* number: Origin latitude (-90 degrees)  */
-    letter_number = [],                 /* long integer array: GEOREF letters                 */
-    long_min_str = [],                  /* char array: Longitude minute string        */
-    lat_min_str = [],                   /* char array: Latitude minute string         */
-    i,                                  /* integer: counter in for loop            */
-    GEOREFString = ''; 
-
-    var abc = 'ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ';
-
-
-                      /* char array:*/
-
-  var LATITUDE_LOW, LATITUDE_HIGH, LONGITUDE_LOW, LONGITUDE_HIGH, MIN_PER_DEG, GEOREF_MINIMUM,
+  var long_min,                           /* number: GEOREF longitude minute part   */
+      lat_min,                            /* number: GEOREF latitude minute part    */
+      origin_long,                        /* number: Origin longitude (-180 degrees)*/
+      origin_lat,                         /* number: Origin latitude (-90 degrees)  */
+      letter_number = [],                 /* long integer array: GEOREF letters                 */
+      long_min_str = [],                  /* char array: Longitude minute string        */
+      lat_min_str = [],                   /* char array: Latitude minute string         */
+      i,                                  /* integer: counter in for loop            */
+      GEOREFString = '',
+      division1Lng, division2Lng, division1Lat, division2Lat,
+      abc,
+      LATITUDE_LOW, LATITUDE_HIGH, LONGITUDE_LOW, LONGITUDE_HIGH, MIN_PER_DEG, GEOREF_MINIMUM,
       GEOREF_MAXIMUM, GEOREF_LETTERS, MAX_PRECISION, LETTER_I, LETTER_M, LETTER_O, LETTER_Q, 
-      LETTER_Z, LETTER_A_OFFSET, ZERO_OFFSET, PI, DEGREE_TO_RADIAN, RADIAN_TO_DEGREE, QUAD, ROUND_ERROR;        //# Rounding factor                       */
+      LETTER_Z, LETTER_A_OFFSET, ZERO_OFFSET, PI, DEGREE_TO_RADIAN, RADIAN_TO_DEGREE, QUAD, ROUND_ERROR;
+
+  abc = 'ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
   LATITUDE_LOW = -90.0;           /* Minimum latitude                      */
   LATITUDE_HIGH = 90.0;           /* Maximum latitude                      */
@@ -78,10 +76,6 @@ var long_min,                           /* number: GEOREF longitude minute part 
   QUAD = 15.0;                    //# Degrees per grid square               */
   ROUND_ERROR = 0.0000005;        //# Rounding factor                       */
 
-
-  //double latitude = geodeticCoordinates->latitude() * RADIAN_TO_DEGREE;
-  //double longitude = geodeticCoordinates->longitude() * RADIAN_TO_DEGREE;
-
   if ((latitude < LATITUDE_LOW) || (latitude > LATITUDE_HIGH)) {
     return null;  
   }
@@ -100,25 +94,44 @@ var long_min,                           /* number: GEOREF longitude minute part 
 
   origin_long = LONGITUDE_LOW;
   origin_lat = LATITUDE_LOW;
-  
-  letter_number[0] = Math.round((longitude-origin_long) / QUAD + ROUND_ERROR);
 
-  longitude = longitude - (letter_number[0] * QUAD + origin_long);
+  // First division longitude
+  division1Lng = (longitude-origin_long) / QUAD + ROUND_ERROR;
 
-  letter_number[2] = Math.round(longitude + ROUND_ERROR);
-  
-  long_min = (longitude - letter_number[2]) * MIN_PER_DEG;
-  
+  if(division1Lng >= 0) {
+    letter_number[0] = Math.floor(division1Lng);
+  } else {
+    letter_number[0] = Math.ceil(division1Lng);
+  }
 
+  division2Lng = longitude - (letter_number[0] * QUAD + origin_long);
 
-  
-  letter_number[1] = Math.floor((latitude - origin_lat) / QUAD + ROUND_ERROR);
-  
-  latitude = latitude - (letter_number[1] * QUAD + origin_lat);
-  
-  letter_number[3] = Math.floor(latitude + ROUND_ERROR);
-  
-  lat_min = (latitude - letter_number[3]) * MIN_PER_DEG;
+  if(division2Lng >= 0) {
+    letter_number[2] = Math.floor(division2Lng);
+  } else {
+    letter_number[2] = Math.ceil(division2Lng)  + ROUND_ERROR;
+  }
+
+  long_min = (division2Lng - letter_number[2]) * MIN_PER_DEG;
+    
+
+  division1Lat = (latitude - origin_lat) / QUAD + ROUND_ERROR;
+
+  if(division1Lat >= 0) {
+    letter_number[1] = Math.floor(division1Lat);
+  } else {
+    letter_number[1] = Math.ceil(division1Lat);
+  }
+
+  division2Lat = latitude - (letter_number[1] * QUAD + origin_lat);
+
+  if(division2Lat >= 0) {
+    letter_number[3] = Math.floor(division2Lat + ROUND_ERROR);
+  } else {
+    letter_number[3] = Math.ceil(division2Lat + ROUND_ERROR);
+  }
+
+  lat_min = (division2Lat- letter_number[3]) * MIN_PER_DEG;
   
   for (i = 0;i < 4; i++)
   {
@@ -152,6 +165,6 @@ var long_min,                           /* number: GEOREF longitude minute part 
   return GEOREFString;
 
 }
-  console.log(toGeoRef(-45.447778, 120.2594444, 4));
 
-  //console.log(toGeoRef(30.274672, 97.740331, 4))
+var result1 = toGeoRef(-45.447778, 120.2594444, 4)
+console.log("Result: " + result1 + "  vs. WCAQ15563313");
