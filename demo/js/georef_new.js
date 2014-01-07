@@ -1,4 +1,4 @@
-Qluster = (function(module){
+var Qluster = (function(module){
 	
 	module.Utils = (function (utils) {
 		
@@ -52,14 +52,32 @@ Qluster = (function(module){
 		      long_min_str = [],                  /* char array: Longitude minute string        */
 		      lat_min_str = [],                   /* char array: Latitude minute string         */
 		      i,                                  /* integer: counter in for loop            */
-		      GEOREFString = '',
-		      division1Lng, division2Lng, division1Lat, division2Lat,
-		      abc,
-		      LATITUDE_LOW, LATITUDE_HIGH, LONGITUDE_LOW, LONGITUDE_HIGH, MIN_PER_DEG, GEOREF_MINIMUM,
-		      GEOREF_MAXIMUM, GEOREF_LETTERS, MAX_PRECISION, LETTER_I, LETTER_M, LETTER_O, LETTER_Q, 
-		      LETTER_Z, LETTER_A_OFFSET, ZERO_OFFSET, PI, DEGREE_TO_RADIAN, RADIAN_TO_DEGREE, QUAD, ROUND_ERROR;
+		      GEOREFString = '',					//  The resultant GEOREF code
+		      division1Lng,							// intermediate var
+		      division2Lng, 						// intermediate vars
+		      division1Lat, 						// intermediate vars
+		      division2Lat, 						// intermediate vars
+		      abc, 									// alphabet string from which we pick georef letters
+		      LATITUDE_LOW, 						// Constants
+		      LATITUDE_HIGH, 
+		      LONGITUDE_LOW, 
+		      LONGITUDE_HIGH, 
+		      MIN_PER_DEG, 
+		      GEOREF_MINIMUM,
+		      GEOREF_MAXIMUM, 
+		      GEOREF_LETTERS, 
+		      MAX_PRECISION,
+		      LETTER_I, 
+		      LETTER_M, 
+		      LETTER_O, 
+		      LETTER_Q, 
+		      LETTER_Z, 
+		      LETTER_A_OFFSET, 
+		      ZERO_OFFSET, 
+		      QUAD, 
+		      ROUND_ERROR;
 		
-		  abc = 'ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ';
+		  ABC = 'ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ';
 		
 		  LATITUDE_LOW = -90.0;           /* Minimum latitude                      */
 		  LATITUDE_HIGH = 90.0;           /* Maximum latitude                      */
@@ -161,7 +179,7 @@ Qluster = (function(module){
 		  }
 		
 		  for (i=0;i<4;i++){
-		      GEOREFString = GEOREFString + abc[(letter_number[i])];// + LETTER_A_OFFSET];
+		      GEOREFString = GEOREFString + ABC[(letter_number[i])];// + LETTER_A_OFFSET];
 		    }  
 		  
 		  GEOREFString = GEOREFString + convertMinutesToString(long_min,precision);
@@ -171,10 +189,13 @@ Qluster = (function(module){
 
 		};
 		
-	}(utils || {}));
+		return utils;
+		
+	}(module.Utils || {}));
 	
+	return module;
 	
-}(Qluster || {}))
+}(Qluster || {}));
 
-var result1 = Qluster.geodeticToGeoRef(-45.447778, 120.2594444, 4)
+var result1 = Qluster.Utils.geodeticToGeoRef(-45.447778, 120.2594444, 4)
 console.log("Result: " + result1 + "  vs. WCAQ15563313");
