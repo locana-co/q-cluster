@@ -1,3 +1,9 @@
+
+// Begin Node Code
+var Testing = require('./testing.js');
+Testing = Testing.Testing;
+// End Node Code
+
 var Qluster = (function(module){
 	
 	module.Utils = (function (utils) {
@@ -12,7 +18,7 @@ var Qluster = (function(module){
 		 *    str           : String to hold converted minutes         (output)
 		 */
 		
-		  var divisor, min;
+		  var divisor, min, minLength, padding, minStr = '';
 		  
 		  divisor = Math.pow(10.0, (5.0 - precision));
 		  
@@ -22,8 +28,19 @@ var Qluster = (function(module){
 		  minutes = minutes * 1000;
 		  
 		  min = Math.floor(minutes/divisor);
+		  minLength = min.toString().length;
 		  
-		  return min;
+		  if(minLength < precision) {
+		  	padding = precision - minLength;
+		  }
+		  
+		  for(var i = 0; i < padding; i++) {
+		  	minStr = minStr + '0';
+		  }
+		  
+		  minStr = minStr + min;
+		  
+		  return minStr;
 		}
 		
 	   /*   
@@ -183,7 +200,7 @@ var Qluster = (function(module){
 		    }  
 		  
 		  GEOREFString = GEOREFString + convertMinutesToString(long_min,precision);
-		  GEOREFString = GEOREFString +convertMinutesToString(lat_min,precision);
+		  GEOREFString = GEOREFString + convertMinutesToString(lat_min,precision);
 		  
 		  return GEOREFString;
 
@@ -197,5 +214,24 @@ var Qluster = (function(module){
 	
 }(Qluster || {}));
 
-var result1 = Qluster.Utils.geodeticToGeoRef(-45.447778, 120.2594444, 4)
-console.log("Result: " + result1 + "  vs. WCAQ15563313");
+
+try {
+	
+	Testing.assertEqual(Qluster.Utils.geodeticToGeoRef(45.12345, 120.98765, 4), 'WKA9A59250740', 
+		'Qluster.Utils.geodeticToGeoRef(45.12345, 120.98765, 4) failed.');
+	
+	Testing.assertEqual(Qluster.Utils.geodeticToGeoRef(45.12345, -120.98765, 4), 'DKQA00740740', 
+		'Qluster.Utils.geodeticToGeoRef(45.12345, -120.98765, 4) failed.');
+	
+	Testing.assertEqual(Qluster.Utils.geodeticToGeoRef(-45.12345, -120.98765, 4), 'DCQQ00745259', 
+		'Qluster.Utils.geodeticToGeoRef(-45.12345, -120.98765, 4) failed.');
+	
+	Testing.assertEqual(Qluster.Utils.geodeticToGeoRef(-45.12345, 120.98765, 4), 'WCAQ59255259', 
+		'Qluster.Utils.geodeticToGeoRef(-45.12345, 120.98765, 4) failed.');
+	
+	console.log('GEOREF tests successful.')
+}
+catch(e) {
+	console.error(e);
+}
+
