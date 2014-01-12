@@ -217,7 +217,7 @@ var Qluster = (function(module){
 
 try {
 	
-	Testing.assertEqual(Qluster.Utils.geodeticToGeoRef(45.12345, 120.98765, 4), 'WKA9A59250740', 
+	Testing.assertEqual(Qluster.Utils.geodeticToGeoRef(45.12345, 120.98765, 4), 'WKAA59250740', 
 		'Qluster.Utils.geodeticToGeoRef(45.12345, 120.98765, 4) failed.');
 	
 	Testing.assertEqual(Qluster.Utils.geodeticToGeoRef(45.12345, -120.98765, 4), 'DKQA00740740', 

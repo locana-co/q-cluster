@@ -66,6 +66,11 @@ QClusterLeafletLayer.Manager =  function(pointArr, id, map, opts){
 	return this;
 };
 
+
+
+
+
+
 QClusterLeafletLayer.Manager.prototype.mapMove = function(){
 	
 	if(!$(this.map._container).is(":visible")) {
