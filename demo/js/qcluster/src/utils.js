@@ -247,7 +247,7 @@ var QCluster = (function(module){
 			mercatorX = x;
 			mercatorY = 3189068.5*Math.log((1.0 + Math.sin(a))/(1.0 - Math.sin(a)));
 			
-			return [mercatorY, mercatorX];
+			return [mercatorX, mercatorY];
 		};
 		
 		return utils;
