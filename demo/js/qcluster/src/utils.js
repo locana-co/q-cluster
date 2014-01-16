@@ -1,10 +1,10 @@
 
 // Begin Node Code
-var Testing = require('./testing.js');
-Testing = Testing.Testing;
+//var Testing = require('./testing.js');
+//Testing = Testing.Testing;
 // End Node Code
 
-var Qluster = (function(module){
+var QCluster = (function(module){
 	
 	module.Utils = (function (utils) {
 		
@@ -206,28 +206,72 @@ var Qluster = (function(module){
 
 		};
 		
+		
+		utils.webMercToGeodetic = function(mercatorX, mercatorY) {
+	
+			var x,
+				y,
+				lng,
+				lat;
+			
+		    if (Math.abs(mercatorX) > 20037508.3427892){
+		    	console.error('Mercator X: ' + mercatorX + ' is > 20037508.3427892.');
+		        return [null, null];
+			}
+			
+			if (Math.abs(mercatorY) > 20037508.3427892) {
+		    	console.error('Mercator Y: ' + mercatorY + ' is > 20037508.3427892.');
+		        return [null, null];
+			}
+			
+		    lng = ((mercatorX / 6378137.0) * 57.295779513082323) - (Math.floor( ( (((mercatorX / 6378137.0) * 57.295779513082323) + 180.0) / 360.0)) * 360.0);
+		    lat = (1.5707963267948966 - (2.0 * Math.atan(Math.exp((-1.0 * mercatorY) / 6378137.0)))) * 57.295779513082323;
+			
+		    return [lng, lat];
+		};
+		
+		utils.geodeticToWebMerc = function(lng, lat) {
+	
+			if (Math.abs(lat) > 90.0) {
+				console.error('Latitude: ' + lat + ' is invalid.');
+				return [null, null];
+			}
+			if (Math.abs(lng) > 180.0) {
+				console.error('Longitude: ' + lng + ' is invalid.');
+				return [null, null];
+			}
+			var num = lat * 0.017453292519943295;
+			var x = 6378137.0 * num;
+			var a = lon * 0.017453292519943295;
+			
+			mercatorX = x;
+			mercatorY = 3189068.5*Math.log((1.0 + Math.sin(a))/(1.0 - Math.sin(a)));
+			
+			return [mercatorY, mercatorX];
+		};
+		
 		return utils;
 		
 	}(module.Utils || {}));
 	
 	return module;
 	
-}(Qluster || {}));
+}(QCluster || {}));
 
-
+/*
 try {
 	
-	Testing.assertEqual(Qluster.Utils.geodeticToGeoRef(45.12345, 120.98765, 4), 'WKAA59250740', 
-		'Qluster.Utils.geodeticToGeoRef(45.12345, 120.98765, 4) failed.');
+	Testing.assertEqual(QCluster.Utils.geodeticToGeoRef(45.12345, 120.98765, 4), 'WKAA59250740', 
+		'QCluster.Utils.geodeticToGeoRef(45.12345, 120.98765, 4) failed.');
 	
-	Testing.assertEqual(Qluster.Utils.geodeticToGeoRef(45.12345, -120.98765, 4), 'DKQA00740740', 
-		'Qluster.Utils.geodeticToGeoRef(45.12345, -120.98765, 4) failed.');
+	Testing.assertEqual(QCluster.Utils.geodeticToGeoRef(45.12345, -120.98765, 4), 'DKQA00740740', 
+		'QCluster.Utils.geodeticToGeoRef(45.12345, -120.98765, 4) failed.');
 	
-	Testing.assertEqual(Qluster.Utils.geodeticToGeoRef(-45.12345, -120.98765, 4), 'DCQQ00745259', 
-		'Qluster.Utils.geodeticToGeoRef(-45.12345, -120.98765, 4) failed.');
+	Testing.assertEqual(QCluster.Utils.geodeticToGeoRef(-45.12345, -120.98765, 4), 'DCQQ00745259', 
+		'QCluster.Utils.geodeticToGeoRef(-45.12345, -120.98765, 4) failed.');
 	
-	Testing.assertEqual(Qluster.Utils.geodeticToGeoRef(-45.12345, 120.98765, 4), 'WCAQ59255259', 
-		'Qluster.Utils.geodeticToGeoRef(-45.12345, 120.98765, 4) failed.');
+	Testing.assertEqual(QCluster.Utils.geodeticToGeoRef(-45.12345, 120.98765, 4), 'WCAQ59255259', 
+		'QCluster.Utils.geodeticToGeoRef(-45.12345, 120.98765, 4) failed.');
 	
 	console.log('GEOREF tests successful.')
 }
@@ -235,3 +279,4 @@ catch(e) {
 	console.error(e);
 }
 
+*/
