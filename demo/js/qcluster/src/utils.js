@@ -245,10 +245,19 @@ var QCluster = (function(module){
 			var a = lon * 0.017453292519943295;
 			
 			mercatorX = x;
-			mercatorY = 3189068.5*Math.log((1.0 + Math.sin(a))/(1.0 - Math.sin(a)));
+			mercatorY = 3189068.5 * Math.log((1.0 + Math.sin(a))/(1.0 - Math.sin(a)));
 			
 			return [mercatorX, mercatorY];
 		};
+		
+		utils.withinBounds = function(x, y, xmin, xmax, ymin, ymax) {
+			if(x > xmax || point.x < xmin || y > ymax || point.y < ymin ) {
+				return false;
+			}
+			else {
+				return true;
+			}
+		}
 		
 		return utils;
 		
