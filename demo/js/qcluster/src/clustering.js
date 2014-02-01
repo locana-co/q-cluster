@@ -75,7 +75,7 @@ var QCluster = (function(module){
 	};
 	
 	// Public Methods
-	module.clusterPoints = function(pointArr, resolution, clusterTolerance, mapBounds) {
+	module.clusterPoints = function(pointArr, mapBounds, resolution, clusterTolerance) {
 		
 		var ctr = 0,
 			c,
@@ -84,8 +84,7 @@ var QCluster = (function(module){
 			clusters = [],
 			currentCluster;
 		
-		// Make a copy of points array and while doing so add a property 'c' for clustered
-		var points = pointArr;//$.extend(true, [], pointArr, {c:null});
+		var points = pointArr;
 		
 		for (var i = 0, iMax = points.length; i < iMax; i++) {
 			points[i]['c'] = null
@@ -97,7 +96,7 @@ var QCluster = (function(module){
 	    	
 	    	if (!points[index].c && module.Utils.withinBounds(points[index].x, 
 	    			points[index].y, mapBounds.xmin, mapBounds.xmax, 
-	    			mapBounds.ymin, mapBounds.xmax)) //skip already clustered pins
+	    			mapBounds.ymin, mapBounds.ymax)) //skip already clustered pins
 	        {
 	        	
 	        	currentCluster = {'id': ctr, 'points':[], 'xSum': 0, 'ySum':0, 'cX':null, 'cY':null};
