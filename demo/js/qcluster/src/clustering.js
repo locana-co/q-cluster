@@ -85,16 +85,16 @@ var QCluster = (function(module){
 			currentCluster;
 		
 		var points = pointArr;
+		var pLength = points.length;
 		
-		for (var i = 0, iMax = points.length; i < iMax; i++) {
+		for(var i = pLength - 1; i >= 0; i--){
 			points[i]['c'] = null
 		}
 	
 		// loop thru the point array
-		for (index = 0, indexMax = points.length; index < indexMax; index++)
-	    {
-	    	
-	    	if (!points[index].c && module.Utils.withinBounds(points[index].x, 
+		for(var index = pLength - 1; index >= 0; index--){
+			
+			if (!points[index].c && module.Utils.withinBounds(points[index].x, 
 	    			points[index].y, mapBounds.xmin, mapBounds.xmax, 
 	    			mapBounds.ymin, mapBounds.ymax)) //skip already clustered pins
 	        {

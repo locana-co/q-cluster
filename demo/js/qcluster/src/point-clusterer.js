@@ -37,12 +37,40 @@ var QCluster = (function(module){
 			
 		return (xmax - xmin)/mapWidth; // meters/pixel
 	}
+	
+	function isInBounds(x, y) {
+		var xmin,
+			xmax,
+			ymin,
+			ymax,
+			bounds,
+			resolution;
 		
+		bounds = this.map.getBounds();
+		resolution = this.getResolution();
+		
+		xmin = L.CRS.EPSG3857.project(bounds._southWest).x - this.mapEdgeBuffer * resolution;
+		xmax = L.CRS.EPSG3857.project(bounds._northEast).x + this.mapEdgeBuffer * resolution;
+		ymin = L.CRS.EPSG3857.project(bounds._southWest).y - this.mapEdgeBuffer * resolution;
+		ymax = L.CRS.EPSG3857.project(bounds._northEast).y + this.mapEdgeBuffer * resolution;
+		
+		if(x < xmin || x > xmax || y < ymin || y > ymax) {
+			return false
+		}
+		else {
+			return true;
+		}
+		
+	}
 	module.PointClusterer = function(pointArr, layerId, map, opts){
+		
+		var options = opts || {};
 		
 		this.map = map;
 		this.pointData = pointArr;
-		this.tolerance = 150;
+		this.tolerance = options.clusterTolerance || 130;
+		this.clusterCssClass = options.clusterCssClass || '';
+		this.layerVisibility = (typeof options.layerVisibility === 'boolean') ? options.layerVisibility : true;
 		
 		// Do the clustering
 		this.makeClusters();
@@ -53,7 +81,7 @@ var QCluster = (function(module){
 		// When map is clicked, we clear the active marker
 		this.map.on('click', function(){
 			// Remove the active marker and publish notification
-			this.removeActiveCluster(true);
+	//		this.removeActiveCluster(true);
 		}, this);
 		
 		// Listen for removeActiveCluster notifications
@@ -88,18 +116,21 @@ var QCluster = (function(module){
 				
 		var mapBounds = this.map.getBounds();
 		var resolution = getResolution(this.map, mapBounds);
-
+		var webMercMapBounds = getBufferedMercatorMapBounds(mapBounds, resolution, 0)
 		
 		// Use qCluster library to cluster points
-		clusterArr = module.clusterPoints(this.pointData, getBufferedMercatorMapBounds(mapBounds, resolution, 0), resolution, this.tolerance);
+		clusterArr = module.clusterPoints(this.pointData, webMercMapBounds, resolution, this.tolerance);
 		
 		clusterDictionary = {};
-		/*
+		
+		
+		var clusterLength = clusterArr.length;
+		
 		// Now create the cluster markers for the clusters qCluster returned
-		for(var i = 0, iMax = clusterArr.length; i < iMax; i++) {
+		for(var i = clusterLength - 1; i >= 0; i--){
 			
 			// Test to see if this cluster is in the defined rendering extent
-			if(this.isInBounds(clusterArr[i].cX, clusterArr[i].cY)) {
+			if(module.Utils.withinBounds(clusterArr[i].cX, clusterArr[i].cY, webMercMapBounds, resolution)) {
 				
 				// Add this cluster to an object, with a key that matches a css class name that will be added to the leaflet map marker
 				clusterDictionary['cId_' + clusterArr[i].id] = clusterArr[i];
@@ -120,12 +151,12 @@ var QCluster = (function(module){
 					divHtml = '<div><div class="q-marker-single-default"><span>' + cnt +'</span></div></div></div>';
 					divClass = divClass + 'q-marker-cluster-single';
 					
-					// Use color of first reporting id
-					classificationIds = points[0][this.summarizationProperty].toString().split(',');
 					
 					// Color single points by classification color?
 					if(this.useClassificationColors) {
-						
+						// Use color of first reporting id
+						classificationIds = points[0][this.summarizationProperty].toString().split(',');
+							
 						if (typeof this.dataDictionary[classificationIds[0]] !== 'undefined') {
 	
 							divHtml = '<div style="background-color: ' + this.dataDictionary[classificationIds[0]].color + '"><div class="q-marker-single-default"><span>' + cnt +'</span></div></div></div>';
@@ -134,7 +165,7 @@ var QCluster = (function(module){
 				}
 				else if (cnt < 100){
 					divClass =  divClass + 'q-marker-cluster-small cId_' + clusterArr[i].id;
-				} else if (cnt < 1000){
+				} else if (cnt < 2500){
 					divClass = divClass + 'q-marker-cluster-medium cId_' + clusterArr[i].id;
 				} 
 				else {
@@ -145,10 +176,10 @@ var QCluster = (function(module){
 				myIcon = L.divIcon({'className':divClass , 'html': divHtml });
 				
 				// Convert web mercator coordinates to lat/lon as required by leaflet
-				latlon =  this.webMercatorToGeographic(clusterArr[i].cX, clusterArr[i].cY);
+				var lngLat =  module.Utils.webMercToGeodetic(clusterArr[i].cY, clusterArr[i].cX);
 				
 				// instaniate the leaflet marker
-				clusterMarker = L.marker(latlon, {icon:myIcon});
+				clusterMarker = L.marker([lngLat[1], lngLat[0]], {icon:myIcon});
 				
 				// Deal with cluster click event
 				if(this.hasClusterClick) {
@@ -172,14 +203,19 @@ var QCluster = (function(module){
 		// instaniate a leaflet feature group that contains our clusters
 		this.layer = L.featureGroup(clusterMarkers);
 		
+		this.map.addLayer(this.layer);
+		
 		// Add layer to map if displayState is true; 
-		if(this.displayState){
+		if(this.layerVisibility){
 			
 			this.map.addLayer(this.layer);
 			
-			// Set the z-index of the layer
-			$('.' + this.layerId).css('z-index', this.mapOrder);
+			// Set the z-index of the layer if specified
 			
+			if(typeof this.mapOrder === 'number'){
+				$('.' + this.layerId).css('z-index', this.mapOrder);
+			}
+						
 			switch (this.clusterClassificationChart) {
 				
 				case 'donut':
@@ -195,10 +231,17 @@ var QCluster = (function(module){
 		if(this.activeCluster) {
 			this.markActiveCluster();
 		}
-*/
 	};
 
-
+	module.PointClusterer.prototype.mapMove = function(){
+		if(!$(this.map._container).is(":visible")) {
+		return;
+	}
+		
+		this.map.removeLayer(this.layer);
+		
+	    this.makeClusters();
+	};
 	return module;
 	
 }(QCluster || {}));
