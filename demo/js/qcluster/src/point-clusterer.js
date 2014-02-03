@@ -49,26 +49,29 @@ var QCluster = (function(module){
 		
 	module.PointClusterer = function(pointArr, layerId, map, opts){
 		
-		var options = opts || {};
+		var options, pointArrLength, lng, lat, i, webMerc;
+		
+		options = opts || {};
 		
 		this.map = map;
 		this.pointData = pointArr;
 		this.tolerance = options.clusterTolerance || 130;
+		this.mapEdgeBuffer = options.mapEdgeBuffer || 100;
 		this.clusterCssClass = options.clusterCssClass || '';
 		this.layerVisibility = (typeof options.layerVisibility === 'boolean') ? options.layerVisibility : true;
 		
-		var pointArrLength = pointArr.length;
+		this.reportingProperty = options.reportingProperty || null;
+		
+		pointArrLength = pointArr.length;
 		
 		this.pointData = [];
 		
-		var lng, lat;
-		
-		for(var i = pointArrLength - 1; i >= 0; i--) {
+		for(i = pointArrLength - 1; i >= 0; i--) {
 			
 			lat = pointArr[i].lat;
 			lng = pointArr[i].lng;
 				
-			var webMerc = L.CRS.EPSG3857.project(L.latLng(lat, lng));
+			webMerc = L.CRS.EPSG3857.project(L.latLng(lat, lng));
 			
 			this.pointData.push($.extend(true, {
 									georef: QCluster.Utils.geodeticToGeoRef(lng,lat,4),
@@ -78,9 +81,7 @@ var QCluster = (function(module){
 		}
 		
 		this.pointData.sort(sortGeoRef);
-		
-		
-		
+			
 		// Do the clustering
 		this.makeClusters();
 		
@@ -94,7 +95,8 @@ var QCluster = (function(module){
 	module.PointClusterer.prototype.makeClusters = function(map, layer, clusterTolerance, mapBounds) {
 	
 		var clusterArr, clusterDictionary, cnt,divHtml,divClass,myIcon,
-			latlon,points,clusterMarker,classificationId,
+			latlon,points,clusterMarker,classificationIds, mapBounds,
+			resolution, webMercMapBounds, clusterLength, i
 			clusterMarkers = [];
 	
 		// If map is not visible, don't proceed
@@ -105,23 +107,22 @@ var QCluster = (function(module){
 		// If the PointCluster's layer property is defined, remove it from map
 		if(typeof this.layer !== 'undefined') {
 			this.map.removeLayer(this.layer);
-		}
-		
+		}		
 				
-		var mapBounds = this.map.getBounds();
-		var resolution = getResolution(this.map, mapBounds);
-		var webMercMapBounds = getBufferedMercatorMapBounds(mapBounds, resolution, 0)
+		mapBounds = this.map.getBounds();
 		
-		// Use qCluster library to cluster points
+		resolution = getResolution(this.map, mapBounds);
+		
+		webMercMapBounds = getBufferedMercatorMapBounds(mapBounds, resolution, this.mapEdgeBuffer);
+		
 		clusterArr = module.clusterPoints(this.pointData, webMercMapBounds, resolution, this.tolerance);
 		
 		clusterDictionary = {};
-		
-		
-		var clusterLength = clusterArr.length;
+
+		clusterLength = clusterArr.length;
 		
 		// Now create the cluster markers for the clusters qCluster returned
-		for(var i = clusterLength - 1; i >= 0; i--){
+		for(i = clusterLength - 1; i >= 0; i--){
 			
 			// Test to see if this cluster is in the defined rendering extent
 			if(module.Utils.withinBounds(clusterArr[i].cX, clusterArr[i].cY, webMercMapBounds, resolution)) {
@@ -142,27 +143,34 @@ var QCluster = (function(module){
 				
 				// differeniate class names based on cluster point count; clusters greater than one get a 'cluster id' class that matches a key in the this.clusters object
 				if (cnt === 1) {
+					
 					divHtml = '<div><div class="q-marker-single-default"><span>' + cnt +'</span></div></div></div>';
+					
 					divClass = divClass + 'q-marker-cluster-single';
 					
-					
 					// Color single points by classification color?
-					if(this.useClassificationColors) {
+					if(this.reportingProperty !== null) {
 						// Use color of first reporting id
-						classificationIds = points[0][this.summarizationProperty].toString().split(',');
+						classificationIds = points[0][this.reportingProperty].toString().split(',');
 							
 						if (typeof this.dataDictionary[classificationIds[0]] !== 'undefined') {
 	
 							divHtml = '<div style="background-color: ' + this.dataDictionary[classificationIds[0]].color + '"><div class="q-marker-single-default"><span>' + cnt +'</span></div></div></div>';
 						}
-					}		
+					}
+							
 				}
 				else if (cnt < 100){
+					
 					divClass =  divClass + 'q-marker-cluster-small cId_' + clusterArr[i].id;
+					
 				} else if (cnt < 2500){
+					
 					divClass = divClass + 'q-marker-cluster-medium cId_' + clusterArr[i].id;
 				} 
+				
 				else {
+					
 					divClass = divClass + 'q-marker-cluster-large cId_' + clusterArr[i].id;
 				}
 				
@@ -176,16 +184,18 @@ var QCluster = (function(module){
 				clusterMarker = L.marker([lngLat[1], lngLat[0]], {icon:myIcon});
 				
 				// Deal with cluster click event
-				if(this.hasClusterClick) {
-					
-					clusterMarker['l_ids'] = [];
-				
-					for (var j = 0, jMax = cnt; j < jMax; j ++) {
-						clusterMarker['l_ids'].push(points[j].l_id);
-					}
+				if(this.clickHandler) {
 					
 					if(this.clickHandler){
 						clusterMarker.on('click', this.clickHandler, this);
+					}
+					
+					if(this.idProperty)
+						clusterMarker['pointIds'] = [];
+					
+						for (var j = 0, jMax = cnt; j < jMax; j ++) {
+							clusterMarker['pointIds'].push(points[j][this.idProperty]);
+						}
 					}
 				}
 				
