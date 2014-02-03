@@ -11,39 +11,8 @@ $(document).ready(function(){
 	url: 'data/fires2012.json',
 	success: function(data, textStatus, jqXHR){
 		
-		function sortGeoRef(a, b) {
-			if (a.georef < b.georef)
-				return -1;
-			if (a.georef > b.georef)
-				return 1;
-			return 0;	
-		} 
 		
-		var dLength = data.length;
-		
-		pointArr = [];
-		
-		var lng, lat;
-		
-		for(var i = dLength - 1; i >= 0; i--) {
-			
-			lat = data[i].lat;
-			lng = data[i].lng;
-				
-			var webMerc = L.CRS.EPSG3857.project(L.latLng(lat, lng));
-			
-			pointArr.push({
-							lat: lat, 
-							lng: lng, 
-							georef: QCluster.Utils.geodeticToGeoRef(lng,lat,4),
-							x: webMerc.x,
-							y: webMerc.y
-							});
-		}
-		
-		pointArr.sort(sortGeoRef);
-		
-		var pointClusterer = new QCluster.PointClusterer(pointArr, 'testLayer', map, {});
+		var pointClusterer = new QCluster.PointClusterer(data, 'testLayer', map, {});
 		
 		
 	},

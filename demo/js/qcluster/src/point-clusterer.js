@@ -38,30 +38,15 @@ var QCluster = (function(module){
 		return (xmax - xmin)/mapWidth; // meters/pixel
 	}
 	
-	function isInBounds(x, y) {
-		var xmin,
-			xmax,
-			ymin,
-			ymax,
-			bounds,
-			resolution;
+	function sortGeoRef(a, b) {
+		if (a.georef < b.georef)
+			return -1;
+		if (a.georef > b.georef)
+			return 1;
+		return 0;	
+	} 
+			
 		
-		bounds = this.map.getBounds();
-		resolution = this.getResolution();
-		
-		xmin = L.CRS.EPSG3857.project(bounds._southWest).x - this.mapEdgeBuffer * resolution;
-		xmax = L.CRS.EPSG3857.project(bounds._northEast).x + this.mapEdgeBuffer * resolution;
-		ymin = L.CRS.EPSG3857.project(bounds._southWest).y - this.mapEdgeBuffer * resolution;
-		ymax = L.CRS.EPSG3857.project(bounds._northEast).y + this.mapEdgeBuffer * resolution;
-		
-		if(x < xmin || x > xmax || y < ymin || y > ymax) {
-			return false
-		}
-		else {
-			return true;
-		}
-		
-	}
 	module.PointClusterer = function(pointArr, layerId, map, opts){
 		
 		var options = opts || {};
@@ -72,27 +57,36 @@ var QCluster = (function(module){
 		this.clusterCssClass = options.clusterCssClass || '';
 		this.layerVisibility = (typeof options.layerVisibility === 'boolean') ? options.layerVisibility : true;
 		
+		var pointArrLength = pointArr.length;
+		
+		this.pointData = [];
+		
+		var lng, lat;
+		
+		for(var i = pointArrLength - 1; i >= 0; i--) {
+			
+			lat = pointArr[i].lat;
+			lng = pointArr[i].lng;
+				
+			var webMerc = L.CRS.EPSG3857.project(L.latLng(lat, lng));
+			
+			this.pointData.push($.extend(true, {
+									georef: QCluster.Utils.geodeticToGeoRef(lng,lat,4),
+									x: webMerc.x,
+									y: webMerc.y
+									}, pointArr[i]));
+		}
+		
+		this.pointData.sort(sortGeoRef);
+		
+		
+		
 		// Do the clustering
 		this.makeClusters();
 		
 		//  When the map pans or zooms
 		this.map.on('moveend', this.mapMove, this);
 		
-		// When map is clicked, we clear the active marker
-		this.map.on('click', function(){
-			// Remove the active marker and publish notification
-	//		this.removeActiveCluster(true);
-		}, this);
-		
-		// Listen for removeActiveCluster notifications
-	
-	/*
-		amplify.subscribe('removeActiveCluster', this, function(){
-			// Remove the active marker
-			this.removeActiveCluster(false);
-	
-		});
-		*/	
 		return this;
 		
 	};
@@ -235,432 +229,15 @@ var QCluster = (function(module){
 
 	module.PointClusterer.prototype.mapMove = function(){
 		if(!$(this.map._container).is(":visible")) {
-		return;
-	}
+			return;
+		}
 		
 		this.map.removeLayer(this.layer);
 		
 	    this.makeClusters();
 	};
+	
 	return module;
 	
 }(QCluster || {}));
 
-var QClusterLeafletLayer = {};
-
-QClusterLeafletLayer.Manager =  function(pointArr, id, map, opts){
-	
-	this.layer;
-	this.layerId = id;
-	this.pointData = pointArr;
-	this.map = map;
-	this.clusters = {};
-	this.activeClusterLatlng = null;
-	  
-	var self,
-		options,
-		clusters,
-		cnt,
-		divHtml,
-		divClass,
-		myIcon,
-		latlon,
-		points,
-		clusterMarker,
-		classificationId,
-		clusterMarkers = [];
-	
-	self = this;
-		
-	options = opts || {};
-	
-	this.displayState =  this.setBoolOption(options.displayState, true);
-	this.mapOrder = options.mapOrder;
-	this.useClassificationColors = this.setBoolOption(options.useClassificationColors, false);
-	this.hasClusterClick = this.setBoolOption(options.hasClusterClick, true);
-	this.hasSingleClick = this.setBoolOption(options.hasSingleClick, false);
-	this.clusterClassificationChart = options.clusterClassificationChart || 'none';
-	this.dataDictionary = options.dataDictionary || null;
-	this.summarizationProperty = options.summarizationProperty || null;
-	this.mapEdgeBuffer = options.mapEdgeBuffer || 100;
-	this.clusterTolerance = options.clusterTolerance || 100;
-	this.clusterCssClass = options.clusterCssClass || '';
-	this.clusterClickHandler = options.clusterClickHandler || null;
-	this.clickHandler = options.clickHandler || null;
-	this.otherClassificationColor = options.otherClassificationColor || '#666666';
-	this.donutInnerRadiusProportion =  options.donutInnerRadiusProportion || 0.4;
-	
-	// Do the clustering
-	this.clusterPoints();
-	
-	//  When the map pans or zooms
-	this.map.on('moveend', this.mapMove, this);
-	
-	// When map is clicked, we clear the active marker
-	this.map.on('click', function(){
-		// Remove the active marker and publish notification
-		this.removeActiveCluster(true);
-	}, this);
-	
-	// Listen for removeActiveCluster notifications
-	amplify.subscribe('removeActiveCluster', this, function(){
-		// Remove the active marker
-		this.removeActiveCluster(false);
-
-	});
-		
-	return this;
-};
-
-QClusterLeafletLayer.Manager.prototype.mapMove = function(){
-	
-	if(!$(this.map._container).is(":visible")) {
-		return;
-	}
-		
-		this.map.removeLayer(this.layer);
-		
-	    this.clusterPoints();
-
-};
-
-QClusterLeafletLayer.Manager.prototype.findMaxMarkerZ = function(){
-
-	var children = $(this.map._mapPane).find('.leaflet-marker-pane').children();
-
-	var maxZ = 0;
-
-	for(var i = children.length-1; i >= 0; i--) {
-		
-		
-		var zIndex = parseInt($(children[i]).css('zIndex'),10);
-
-		if(zIndex > maxZ) {
-			maxZ = zIndex;
-		}
-
-	}
-
-	return maxZ;
-}
-
-// Add D3 donut charts to leaflet cluster icons
-QClusterLeafletLayer.Manager.prototype.makeDonuts = function() {
-	
-	var points,
-		data,
-		tmpDataset,
-		dataset,
-		width,
-	    height,
-	    radius,
-	    wrapper,
-	    color,
-	    pie,
-	    arc,
-	    svg,
-	    path,
-	    rIdArr,
-	    rId;
-		
-	// Loop thru the this.clusters object    
-	for (var i in this.clusters){
-		
-		data = {};
-		
-		points = this.clusters[i].points;
-		
-		// Loop through the clusters points and summarize the points by counts per unique attribute (stored in the 's' property)
-		for (var j = 0, jMax = points.length; j < jMax; j ++) {
-			
-			// Split the comma delimited string of reporting ids
-			rIdArr = points[j][this.summarizationProperty].toString().split(',');
-			
-			// Loop
-			for (var k = 0, kMax = rIdArr.length; k < kMax; k++) {
-				
-				// this iteration's reporting id	
-				rId = rIdArr[k];	
-				
-				// If we have already come across this id before (and started a count of its frequency), increment the count
-				if(data.hasOwnProperty(rId)) {
-					data[rId]['count']++; 
-				}
-				else if (rId === ''){
-					// Null report id's come through as an empty string because this starts as a comma delimited string
-					//  We're assigning null ids to a pseudo-id of -9999
-					
-					// Increment the count of -9999 
-					if(data.hasOwnProperty('-9999')) {
-						data['-9999']['count']++; 
-					}
-					else {
-						// if this is the first null id, create an object property and start the counter
-						data['-9999'] = {
-						'count': 1,
-						'color': this.otherClassificationColor,
-						'alias': 'Not assigned'
-						};
-					}
-				}
-				else {
-					// if this is the first time we see this id, create an object property and start the counter
-					data[rId] = {
-						'count': 1,
-						'color': this.dataDictionary[rId].color,
-						'alias': this.dataDictionary[rId].alias
-						};
-				}
-
-			}
-	
-		}
-
-		// prep dataset for D3; need a temp dataset to deal with merging of data counts for 'other' category
-		tmpDataset = [];
-		dataset = [];
-		
-		// Push properties from object holding the category counts/colors categories into an object array
-		for (var j in data) {
-			tmpDataset.push(data[j]);	
-		}
-		
-		// Create an object that will merge the count from all classification catergories that we've deemed as 'other''
-		var mergedOther = {
-						'count': 0,
-						'color': this.otherClassificationColor,
-						'alias': 'other'
-					};
-		
-		// Merge all 'other' objects; we determine which are 'other' by testing to see if its been assigned the 'other' color		
-		for (var k = 0, kMax = tmpDataset.length; k < kMax; k++) {
-			
-			if(tmpDataset[k].color === this.otherClassificationColor) {
-				mergedOther.count = mergedOther.count + tmpDataset[k].count;
-			} else {
-				dataset.push(tmpDataset[k]);
-			}
-		}
-		
-		// Add the merge objedt to the dataset we will use in donut chart
-		dataset.push(mergedOther);
-
-		// Use jQuery to get this cluster markers height and width (set in the CSS)
-		wrapper = $('.'+ this.layerId + '.' + i);
-		width = $(wrapper).width();
-		height = $(wrapper).height();
-		radius =  Math.min(width, height) / 2;
-		
-		
-		// D3 donut chart boilerplate
-		
-		pie = d3.layout.pie()
-		    	.sort(null);
-		
-		arc = d3.svg.arc()
-		    .innerRadius(radius-radius * this.donutInnerRadiusProportion)
-		    .outerRadius(radius);
-		
-		// Note that we add 'clusterDonut' as a selector
-		svg = d3.select('.'+ this.layerId + '.' + i).append("svg")
-			.attr("class", "clusterDonut")
-		    .attr("width", width)
-		    .attr("height", height)
-		    //.style('display', 'none')
-		    .append("g")
-		    .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
-		
-			path = svg.selectAll("path")
-					.data(function(){
-						    	var dataObjArr,
-						    		dataArr,
-						    		pieData;
-						    		
-						    	dataObjArr = dataset;
-						    	
-						    	dataArr = [];
-						    	
-						    	for (var i = 0, iMax = dataObjArr.length; i < iMax; i++) {
-						    		dataArr.push(dataObjArr[i]['count']);	
-						    	}
-						    	
-						    	pieData = pie(dataArr);
-						    	
-						    	for (var i = 0, iMax = pieData.length; i < iMax; i++) {
-						    		pieData[i].data = dataObjArr[i];	
-						    	}
-						    	
-						    	return pieData;
-		    				})
-		  				.enter().append("path")
-		    			.attr("fill", function(d, j) { 
-								    	return d.data.color; 
-								    	})
-		    			.attr("d", arc);
-
-	}
-	
-
-};
-
-QClusterLeafletLayer.Manager.prototype.hideDonuts = function(){
-	
-	$('.' + this.layerId + ' .clusterDonut').hide();
-	
-};
-
-QClusterLeafletLayer.Manager.prototype.showDonuts = function(){
-	
-	$('.' + this.layerId + ' .clusterDonut').show();
-	
-};
-
-// Check whether an x,y (web mercator is within the buffered extent of the passed Leaflet map)
-QClusterLeafletLayer.Manager.prototype.isInBounds = function(x, y) {
-	var xmin,
-		xmax,
-		ymin,
-		ymax,
-		bounds,
-		resolution;
-	
-	bounds = this.map.getBounds();
-	resolution = this.getResolution();
-	
-	xmin = L.CRS.EPSG3857.project(bounds._southWest).x - this.mapEdgeBuffer * resolution;
-	xmax = L.CRS.EPSG3857.project(bounds._northEast).x + this.mapEdgeBuffer * resolution;
-	ymin = L.CRS.EPSG3857.project(bounds._southWest).y - this.mapEdgeBuffer * resolution;
-	ymax = L.CRS.EPSG3857.project(bounds._northEast).y + this.mapEdgeBuffer * resolution;
-	
-	if(x < xmin || x > xmax || y < ymin || y > ymax) {
-		return false
-	}
-	else {
-		return true;
-	}
-	
-};
-
-
-QClusterLeafletLayer.Manager.prototype.markActiveCluster = function() {
-	
-		// When the user click on a cluster that can be made active (i.e., less than 20 points), the map centers on that cluster
-		// Of course, when that happens, the old clusters/layer gets destoyed and remade.  Thus we lose reference to the cluster
-		// that we clicked to make active.  However, the lat/lng of the orginally clicked cluster, will be identical to the new
-		// cluster that should be made active
-		
-		// Loop thru all the 'markers' (aka _layers) in the map layer 
-		for(var i in this.layer._layers) {
-			
-			var latlng = this.layer._layers[i]._latlng;
-			
-			// If this marker's latlng === the clicked cluster latlng, add active-marker class to the divIcon
-			if(latlng.lat === this.activeClusterLatlng.lat && latlng.lng === this.activeClusterLatlng.lng ) {
-				$(this.layer._layers[i]._icon).toggleClass('active-marker', true);
-			}
-		}
-
-};
-
-QClusterLeafletLayer.Manager.prototype.removeActiveCluster = function(publishRemovalNotice) {
-	
-		this.activeClusterLatlng = null;
-		
-		$('.leaflet-marker-pane .active-marker').toggleClass('active-marker', false);
-		
-		if(publishRemovalNotice === true){
-			// Send a message that the active cluster has been removed
-			amplify.publish('activeClusterRemoved');
-		}
-};
-
-QClusterLeafletLayer.Manager.prototype.webMercatorToGeographic = function(mercatorX, mercatorY) {
-	
-	var x,
-		y,
-		lon,
-		lat;
-	
-    if ((Math.abs(mercatorX) > 20037508.3427892) || (Math.abs(mercatorY) > 20037508.3427892)){
-        return;
-	}
-	
-    lon = ((mercatorX / 6378137.0) * 57.295779513082323) - (Math.floor( ( (((mercatorX / 6378137.0) * 57.295779513082323) + 180.0) / 360.0)) * 360.0);
-    lat = (1.5707963267948966 - (2.0 * Math.atan(Math.exp((-1.0 * mercatorY) / 6378137.0)))) * 57.295779513082323;
-	
-    return [lat, lon];
-};
-
-QClusterLeafletLayer.Manager.prototype.setBoolOption = function(option, defaultBool){
-	
-		if(typeof option === 'undefined' ) {
-			return defaultBool;
-		} else if(option !== true && option !== false ) {
-			return defaultBool;
-		} else {
-			return option;
-		}
-	
-	
-};
-
-QClusterLeafletLayer.FacetColorLibrary = function(facetId, facetName, facetValues, propMap, opts) {
-	
-	var color,
-		options,
-		index,
-		colorPalette,
-		maxColors,
-		otherColor,
-		facet;
-	
-	options = opts || {};
-			
-	colorPalette = options.colorPalette || ['#8b722c','#e7dfc7','#040707','#c96228','#80adc0','#a19788','#ddecf2','#9e0000','#03671f','#8e2b5c','#e13066','#5c8276','#efa0cb','#62517b','#2c688b','#56c2a7','#e1df2f','#ed3333','#e69890','#545454'];	
-	
-	maxColors = options.maxColors || 50;
-	
-	otherColor = options.otherColor || '#666666';
-	
-		facet = {
-			
-			'id': facetId,
-		 	'name': facetName,
-		 	'values_keyVal' : {},
-		 	'values_arr': [],
-		 	'otherColor': otherColor
-		 	
-		};	
-		
-		// Loop thru each classification
-		_.each(facetValues, function(fVal, i){
-			
-			var facetValue = {
-				'id': fVal[propMap.id],
-				'name': fVal[propMap.name], 
-				'color': fVal[propMap.color], 
-			};
-			
-			if(typeof facetValue.color === 'undefined' || facetValue.color === null) {
-				
-				if (i > maxColors - 1) {
-					facetValue.color = otherColor;
-				
-				} else if (i > colorPalette.length - 1) {
-					
-					index = (i % colorPalette.length) - 1;
-					facetValue.color = colorPalette[index];
-				
-				} else {
-					
-					facetValue.color = colorPalette[i];					
-				}				
-			}
-			
-			facet.values_keyVal[facetValue.id] = facetValue;
-			
-			facet.values_arr.push(facetValue);
-		});
-
-	return facet;
-};
