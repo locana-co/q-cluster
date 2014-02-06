@@ -59,7 +59,6 @@ var QCluster = (function(module){
 		this.mapEdgeBuffer = options.mapEdgeBuffer || 100;
 		this.clusterCssClass = options.clusterCssClass || '';
 		this.layerVisibility = (typeof options.layerVisibility === 'boolean') ? options.layerVisibility : true;
-		
 		this.reportingProperty = options.reportingProperty || null;
 		
 		pointArrLength = pointArr.length;
@@ -70,9 +69,11 @@ var QCluster = (function(module){
 			
 			lat = pointArr[i].lat;
 			lng = pointArr[i].lng;
-				
+			
+            // Convert to Web Mercator
 			webMerc = L.CRS.EPSG3857.project(L.latLng(lat, lng));
 			
+            // Calculate georef and add it and web merc coords to object
 			this.pointData.push($.extend(true, {
 									georef: QCluster.Utils.geodeticToGeoRef(lng,lat,4),
 									x: webMerc.x,
@@ -80,12 +81,13 @@ var QCluster = (function(module){
 									}, pointArr[i]));
 		}
 		
+        // Sort the array by georef
 		this.pointData.sort(sortGeoRef);
 			
 		// Do the clustering
 		this.makeClusters();
 		
-		//  When the map pans or zooms
+		//  When the map pans or zooms, fire this.mapMove
 		this.map.on('moveend', this.mapMove, this);
 		
 		return this;
@@ -104,19 +106,26 @@ var QCluster = (function(module){
 			return;
 		}
 		
-		// If the PointCluster's layer property is defined, remove it from map
+		// If the PointCluster's layer property is defined, remove it from map; we recluster and add the layer back
 		if(typeof this.layer !== 'undefined') {
+            
+            // TODO: prob need to unbind cluster click events...?
 			this.map.removeLayer(this.layer);
 		}		
-				
+		
+        // Calculate the extent bounds
 		mapBounds = this.map.getBounds();
 		
+        // Calculate the map's resolutions (px/meter)
 		resolution = getResolution(this.map, mapBounds);
 		
+        // Convert map bounds to web merc and add buffer (px) if one has been passed
 		webMercMapBounds = getBufferedMercatorMapBounds(mapBounds, resolution, this.mapEdgeBuffer);
 		
+        // Cluster the points
 		clusterArr = module.clusterPoints(this.pointData, webMercMapBounds, resolution, this.tolerance);
 		
+        
 		clusterDictionary = {};
 
 		clusterLength = clusterArr.length;
@@ -135,13 +144,13 @@ var QCluster = (function(module){
 				// Number of points in each cluster
 				cnt = points.length;
 				
-				// Custom HTML inside of each leaflet marker div
+				// Create custom HTML inside of each leaflet marker div
 				divHtml = '<div><span>' + cnt +'</span></div>';
 				
 				// create the class name(s) for the leaflet marker div; the layer id added as the first additional class
 				divClass = this.layerId + ' leaflet-marker-icon q-marker-cluster ' + this.clusterCssClass;
 				
-				// differeniate class names based on cluster point count; clusters greater than one get a 'cluster id' class that matches a key in the this.clusters object
+				// differeniate class names based on cluster point count; clusters greater than one get a 'cluster id' class that matches a key in clustersDictionary object
 				if (cnt === 1) {
 					
 					divHtml = '<div><div class="q-marker-single-default"><span>' + cnt +'</span></div></div></div>';
@@ -150,12 +159,14 @@ var QCluster = (function(module){
 					
 					// Color single points by classification color?
 					if(this.reportingProperty !== null) {
+                        
 						// Use color of first reporting id
 						classificationIds = points[0][this.reportingProperty].toString().split(',');
 							
 						if (typeof this.dataDictionary[classificationIds[0]] !== 'undefined') {
 	
-							divHtml = '<div style="background-color: ' + this.dataDictionary[classificationIds[0]].color + '"><div class="q-marker-single-default"><span>' + cnt +'</span></div></div></div>';
+							divHtml = '<div style="background-color: ' + this.dataDictionary[classificationIds[0]].color 
+                                    + '"><div class="q-marker-single-default"><span>' + cnt +'</span></div></div></div>';
 						}
 					}
 							
