@@ -60,8 +60,17 @@ var QCluster = (function(module){
 		this.clusterCssClass = options.clusterCssClass || '';
 		this.layerVisibility = (typeof options.layerVisibility === 'boolean') ? options.layerVisibility : true;
 		this.reportingProperty = options.reportingProperty || null;
+		this.showReportDonuts = (typeof options.showReportDonuts === 'boolean') ? options.showReportDonuts : true;
+        this.reportingDictionary = options.reportingDictionary || {};
+        this.defaultPalette = options.defaultPalette || ['#8b722c', '#e7dfc7', '#040707', '#c96228', '#80adc0', 
+                                                         '#a19788', '#ddecf2', '#9e0000', '#03671f', '#8e2b5c', 
+                                                         '#e13066', '#5c8276', '#efa0cb', '#62517b', '#2c688b', 
+                                                         '#56c2a7', '#e1df2f', '#ed3333', '#e69890', '#545454'];
+        
+        this.reportingValueNA = options.reportingValueNA || {color: '#666666', label: 'NA'};
+        this.donutIRFrac =  options.donutIRFrac || 0.4;
 		
-		pointArrLength = pointArr.length;
+        pointArrLength = pointArr.length;
 		
 		this.pointData = [];
 		
@@ -79,6 +88,7 @@ var QCluster = (function(module){
 									x: webMerc.x,
 									y: webMerc.y
 									}, pointArr[i]));
+            
 		}
 		
         // Sort the array by georef
@@ -96,6 +106,7 @@ var QCluster = (function(module){
 	
 	module.PointClusterer.prototype.makeClusters = function(map, layer, clusterTolerance, mapBounds) {
 	
+
 		var clusterArr, clusterDictionary, cnt,divHtml,divClass,myIcon,
 			latlon,points,clusterMarker,classificationIds, mapBounds,
 			resolution, webMercMapBounds, clusterLength, i
@@ -129,10 +140,10 @@ var QCluster = (function(module){
 		clusterDictionary = {};
 
 		clusterLength = clusterArr.length;
-		
+		      
 		// Now create the cluster markers for the clusters qCluster returned
 		for(i = clusterLength - 1; i >= 0; i--){
-			
+			  
 			// Test to see if this cluster is in the defined rendering extent
 			if(module.Utils.withinBounds(clusterArr[i].cX, clusterArr[i].cY, webMercMapBounds, resolution)) {
 				
@@ -163,9 +174,9 @@ var QCluster = (function(module){
 						// Use color of first reporting id
 						classificationIds = points[0][this.reportingProperty].toString().split(',');
 							
-						if (typeof this.dataDictionary[classificationIds[0]] !== 'undefined') {
+						if (typeof this.reportingDictionary[classificationIds[0]] !== 'undefined') {
 	
-							divHtml = '<div style="background-color: ' + this.dataDictionary[classificationIds[0]].color 
+							divHtml = '<div style="background-color: ' + this.reportingDictionary[classificationIds[0]].color 
                                     + '"><div class="q-marker-single-default"><span>' + cnt +'</span></div></div></div>';
 						}
 					}
@@ -188,7 +199,7 @@ var QCluster = (function(module){
 				// set up the custom leaflet marker icon
 				myIcon = L.divIcon({'className':divClass , 'html': divHtml });
 				
-				// Convert web mercator coordinates to lat/lon as required by leaflet
+				// Convert web mercator coordinates to lat/lng as required by leaflet
 				var lngLat =  module.Utils.webMercToGeodetic(clusterArr[i].cY, clusterArr[i].cX);
 				
 				// instaniate the leaflet marker
@@ -197,24 +208,34 @@ var QCluster = (function(module){
 				// Deal with cluster click event
 				if(this.clickHandler) {
 					
+                    
 					if(this.clickHandler){
 						clusterMarker.on('click', this.clickHandler, this);
 					}
 					
-					if(this.idProperty)
+                    
+					if(this.idProperty){
 						clusterMarker['pointIds'] = [];
 					
 						for (var j = 0, jMax = cnt; j < jMax; j ++) {
 							clusterMarker['pointIds'].push(points[j][this.idProperty]);
 						}
+                    
 					}
+ 
 				}
 				
 				// Store it in an array
-				clusterMarkers.push(clusterMarker);	
+				clusterMarkers.push(clusterMarker);
+                
 			}
+            
+
+            
 		}
 		
+       this.clusters = clusterDictionary;
+        
 		// instaniate a leaflet feature group that contains our clusters
 		this.layer = L.featureGroup(clusterMarkers);
 		
@@ -230,22 +251,18 @@ var QCluster = (function(module){
 			if(typeof this.mapOrder === 'number'){
 				$('.' + this.layerId).css('z-index', this.mapOrder);
 			}
-						
-			switch (this.clusterClassificationChart) {
-				
-				case 'donut':
-					//this.makeDonuts();
-					break;
-				case 'none':
-					break;
-				default:
-			}	
+			
+            if(this.showReportDonuts) {
+                this.makeDonuts();
+            }
 			
 		}
-		
+
 		if(this.activeCluster) {
 			this.markActiveCluster();
 		}
+        
+
 	};
 
 	module.PointClusterer.prototype.mapMove = function(){
