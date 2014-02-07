@@ -77,6 +77,15 @@ var QCluster = (function(module){
 	// Public Methods
 	module.clusterPoints = function(pointArr, mapBounds, resolution, clusterTolerance) {
 		
+        function withinBounds(x, y, xmin, xmax, ymin, ymax) {
+			if(x > xmax || x < xmin || y > ymax || y < ymin ) {
+				return false;
+			}
+			else {
+				return true;
+			}
+		}
+		
 		var ctr = 0,
 			c,
 			index,
@@ -94,7 +103,7 @@ var QCluster = (function(module){
 		// loop thru the point array
 		for(var index = pLength - 1; index >= 0; index--){
 			
-			if (!points[index].c && module.Utils.withinBounds(points[index].x, 
+			if (!points[index].c && withinBounds(points[index].x, 
 	    			points[index].y, mapBounds.xmin, mapBounds.xmax, 
 	    			mapBounds.ymin, mapBounds.ymax)) //skip already clustered pins
 	        {

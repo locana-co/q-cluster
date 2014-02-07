@@ -45,7 +45,211 @@ var QCluster = (function(module){
 			return 1;
 		return 0;	
 	} 
+	
+    function geodeticToGeoRef(longitude,latitude,  precision){
+	      
+            function convertMinutesToString(minutes, precision)
+            { 
+            /*    
+             *  This function converts minutes to a string of length precision.
+             *
+             *    minutes       : Minutes to be converted                  (input)
+             *    precision     : Length of resulting string               (input)
+             *    str           : String to hold converted minutes         (output)
+             */
+            
+              var divisor, min, minLength, padding, minStr = '';
+              
+              divisor = Math.pow(10.0, (5.0 - precision));
+              
+              if (minutes == 60.0)
+                minutes = 59.999;
+              
+              minutes = minutes * 1000;
+              
+              min = Math.floor(minutes/divisor);
+              minLength = min.toString().length;
+              
+              if(minLength < precision) {
+                padding = precision - minLength;
+              }
+              
+              for(var i = 0; i < padding; i++) {
+                minStr = minStr + '0';
+              }
+              
+              minStr = minStr + min;
+              
+              return minStr;
+            }
+            
+	      var long_min,                           /* number: GEOREF longitude minute part   */
+		      lat_min,                            /* number: GEOREF latitude minute part    */
+		      origin_long,                        /* number: Origin longitude (-180 degrees)*/
+		      origin_lat,                         /* number: Origin latitude (-90 degrees)  */
+		      letter_number = [],                 /* long integer array: GEOREF alpha-indices                */
+		      long_min_str = [],                  /* char array: Longitude minute string        */
+		      lat_min_str = [],                   /* char array: Latitude minute string         */
+		      i,                                  /* integer: counter in for loop            */
+		      GEOREFString = '',					//  The resultant GEOREF code
+		      division1Lng,							// intermediate var
+		      division2Lng, 						// intermediate vars
+		      division1Lat, 						// intermediate vars
+		      division2Lat, 						// intermediate vars
+		      abc, 									// alphabet string from which we pick georef letters
+		      LATITUDE_LOW, 						// Constants
+		      LATITUDE_HIGH, 
+		      LONGITUDE_LOW, 
+		      LONGITUDE_HIGH, 
+		      MIN_PER_DEG, 
+		      GEOREF_MINIMUM,
+		      GEOREF_MAXIMUM, 
+		      GEOREF_LETTERS, 
+		      MAX_PRECISION,
+		      LETTER_I, 
+		      LETTER_M, 
+		      LETTER_O, 
+		      LETTER_Q, 
+		      LETTER_Z, 
+		      LETTER_A_OFFSET, 
+		      ZERO_OFFSET, 
+		      QUAD, 
+		      ROUND_ERROR;
+		
+		  ABC = 'ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ';
+		
+		  LATITUDE_LOW = -90.0;           /* Minimum latitude                      */
+		  LATITUDE_HIGH = 90.0;           /* Maximum latitude                      */
+		  LONGITUDE_LOW = -180.0;         /* Minimum longitude                     */
+		  LONGITUDE_HIGH = 360.0;         /* Maximum longitude                     */
+		  MIN_PER_DEG = 60.0;             /* Number of minutes per degree          */
+		  GEOREF_MINIMUM = 4;                /* Minimum number of chars for GEOREF    */
+		  GEOREF_MAXIMUM = 14;               /* Maximum number of chars for GEOREF    */
+		  GEOREF_LETTERS = 4;                //# Number of letters in GEOREF string    */
+		  MAX_PRECISION = 5;                 //# Maximum precision of minutes part     */
+		  LETTER_I = 8;                      //# Index for letter I                    */
+		  LETTER_M = 12;                     //# Index for letter M                    */
+		  LETTER_O = 14;                     //# Index for letter O                    */
+		  LETTER_Q = 16;                     //# Index for letter Q                    */
+		  LETTER_Z = 25;                     //# Index for letter Z                    */
+		  LETTER_A_OFFSET = 78;              //# Letter A offset in character set      */
+		  ZERO_OFFSET = 48;                  //# Number zero offset in character set   */
+		  PI = 3.14159265358979323e0;     //# PI                                    */
+		  QUAD = 15.0;                    //# Degrees per grid square               */
+		  ROUND_ERROR = 0.0000005;        //# Rounding factor                       */
+		
+		  if ((latitude < LATITUDE_LOW) || (latitude > LATITUDE_HIGH)) {
+		    return null;  
+		  }
+		
+		  if (longitude < LONGITUDE_LOW)  {
+		    return null;  
+		  }
+		
+		  if ((precision < 0) || (precision > MAX_PRECISION)) {
+		    return null;
+		  }
+		
+		  if (longitude > 180){
+		        longitude -= 360;
+		  }
+		
+		  origin_long = LONGITUDE_LOW;
+		  origin_lat = LATITUDE_LOW;
+		
+		  // First division longitude
+		  division1Lng = (longitude-origin_long) / QUAD + ROUND_ERROR;
+		
+		  if(division1Lng >= 0) {
+		    letter_number[0] = Math.floor(division1Lng);
+		  } else {
+		    letter_number[0] = Math.ceil(division1Lng);
+		  }
+		
+		  division2Lng = longitude - (letter_number[0] * QUAD + origin_long);
+		
+		  if(division2Lng >= 0) {
+		    letter_number[2] = Math.floor(division2Lng);
+		  } else {
+		    letter_number[2] = Math.ceil(division2Lng)  + ROUND_ERROR;
+		  }
+		
+		  long_min = (division2Lng - letter_number[2]) * MIN_PER_DEG;
+		    
+		
+		  division1Lat = (latitude - origin_lat) / QUAD + ROUND_ERROR;
+		
+		  if(division1Lat >= 0) {
+		    letter_number[1] = Math.floor(division1Lat);
+		  } else {
+		    letter_number[1] = Math.ceil(division1Lat);
+		  }
+		
+		  division2Lat = latitude - (letter_number[1] * QUAD + origin_lat);
+		
+		  if(division2Lat >= 0) {
+		    letter_number[3] = Math.floor(division2Lat + ROUND_ERROR);
+		  } else {
+		    letter_number[3] = Math.ceil(division2Lat + ROUND_ERROR);
+		  }
+		
+		  lat_min = (division2Lat- letter_number[3]) * MIN_PER_DEG;
+		  
+		  for (i = 0;i < 4; i++)
+		  {
+		    if (letter_number[i] >= LETTER_I)
+		      letter_number[i] += 1;
+		    if (letter_number[i] >= LETTER_O)
+		      letter_number[i] += 1;
+		  }
+		
+		  if (letter_number[0] == 26)
+		  { /* longitude of 180 degrees */
+		    letter_number[0] = LETTER_Z;
+		    letter_number[2] = LETTER_Q;
+		    long_min = 59.999;
+		  }
+		  
+		  if (letter_number[1] == 13)
+		  { /* latitude of 90 degrees */
+		    letter_number[1] = LETTER_M;
+		    letter_number[3] = LETTER_Q;
+		    lat_min = 59.999;
+		  }
+		
+		  for (i=0;i<4;i++){
+		      GEOREFString = GEOREFString + ABC[(letter_number[i])];// + LETTER_A_OFFSET];
+		    }  
+		  
+		  GEOREFString = GEOREFString + convertMinutesToString(long_min,precision);
+		  GEOREFString = GEOREFString + convertMinutesToString(lat_min,precision);
+		  
+		  return GEOREFString;
+
+		};
+	
+	function webMercToGeodetic(mercatorY,mercatorX) {
+	
+			var x,
+				y,
+				lng,
+				lat;
 			
+		    if (Math.abs(mercatorX) > 20037508.3427892){
+		    	console.error('Mercator X: ' + mercatorX + ' is > 20037508.3427892.');
+		        return [null, null];
+			}
+			
+			if (Math.abs(mercatorY) > 20037508.3427892) {
+		    	console.error('Mercator Y: ' + mercatorY + ' is > 20037508.3427892.');
+		        return [null, null];
+			}
+			
+		    lng = ((mercatorX / 6378137.0) * 57.295779513082323) - (Math.floor( ( (((mercatorX / 6378137.0) * 57.295779513082323) + 180.0) / 360.0)) * 360.0);
+		    lat = (1.5707963267948966 - (2.0 * Math.atan(Math.exp((-1.0 * mercatorY) / 6378137.0)))) * 57.295779513082323;
+			
+		    return [lng, lat];
+		};		
 		
 	module.PointClusterer = function(pointArr, layerId, map, opts){
 		
@@ -84,7 +288,7 @@ var QCluster = (function(module){
 			
             // Calculate georef and add it and web merc coords to object
 			this.pointData.push($.extend(true, {
-									georef: QCluster.Utils.geodeticToGeoRef(lng,lat,4),
+									georef: geodeticToGeoRef(lng,lat,4),
 									x: webMerc.x,
 									y: webMerc.y
 									}, pointArr[i]));
@@ -110,7 +314,7 @@ var QCluster = (function(module){
 		var clusterArr, clusterDictionary, cnt,divHtml,divClass,myIcon,
 			latlon,points,clusterMarker,classificationIds, mapBounds,
 			resolution, webMercMapBounds, clusterLength, i
-			clusterMarkers = [];
+			clusterMarkers = [], lats = [], lngs = [];
 	
 		// If map is not visible, don't proceed
 		if(!$(this.map._container).is(":visible")) {
@@ -145,7 +349,7 @@ var QCluster = (function(module){
 		for(i = clusterLength - 1; i >= 0; i--){
 			  
 			// Test to see if this cluster is in the defined rendering extent
-			if(module.Utils.withinBounds(clusterArr[i].cX, clusterArr[i].cY, webMercMapBounds, resolution)) {
+			//if(module.Utils.withinBounds(clusterArr[i].cX, clusterArr[i].cY, webMercMapBounds, resolution)) {
 				
 				// Add this cluster to an object, with a key that matches a css class name that will be added to the leaflet map marker
 				clusterDictionary['cId_' + clusterArr[i].id] = clusterArr[i];
@@ -200,11 +404,29 @@ var QCluster = (function(module){
 				myIcon = L.divIcon({'className':divClass , 'html': divHtml });
 				
 				// Convert web mercator coordinates to lat/lng as required by leaflet
-				var lngLat =  module.Utils.webMercToGeodetic(clusterArr[i].cY, clusterArr[i].cX);
+				var lngLat =  webMercToGeodetic(clusterArr[i].cY, clusterArr[i].cX);
 				
 				// instaniate the leaflet marker
 				clusterMarker = L.marker([lngLat[1], lngLat[0]], {icon:myIcon});
 				
+                // Determine if all points within a cluster have the approximately same coordinates
+                clusterMarker['stacked'] = true;
+                
+                lats[0] = Math.round(points[0].lat*10000)/10000;
+                lngs[0] = Math.round(points[0].lng*10000)/10000;
+
+                for (var n = points.length - 1; n >= 0; n--) {
+                    
+                    lats[n] = 	Math.round(points[n].lat * 10000)/10000;
+                    lngs[n] = Math.round(points[n].lng * 10000)/10000;
+                    if( lats[n] !== lats[0] 
+                        || lngs[n] !== lngs[0]){
+                    
+                        clusterMarker['stacked'] = false;
+                        break;
+                    }
+                }
+                
 				// Deal with cluster click event
 				if(this.clickHandler) {
 					
@@ -229,10 +451,8 @@ var QCluster = (function(module){
 				clusterMarkers.push(clusterMarker);
                 
 			}
-            
-
-            
-		}
+ 
+		//}
 		
        this.clusters = clusterDictionary;
         
@@ -275,6 +495,61 @@ var QCluster = (function(module){
 	    this.makeClusters();
 	};
 	
+    
+    module.PointClusterer.prototype.markActiveCluster = function() {
+	
+		// When the user click on a cluster that can be made active (i.e., less than 20 points), the map centers on that cluster
+		// Of course, when that happens, the old clusters/layer gets destoyed and remade.  Thus we lose reference to the cluster
+		// that we clicked to make active.  However, the lat/lng of the orginally clicked cluster, will be identical to the new
+		// cluster that should be made active
+		var latlng;
+        
+		// Loop thru all the 'markers' (aka _layers) in the map layer 
+		for(var i in this.layer._layers) {
+			
+			latlng = this.layer._layers[i]._latlng;
+			
+			// If this marker's latlng === the clicked cluster latlng, add active-marker class to the divIcon
+			if(latlng.lat === this.activeClusterLatlng.lat && latlng.lng === this.activeClusterLatlng.lng ) {
+				$(this.layer._layers[i]._icon).toggleClass('active-marker', true);
+			}
+		}
+
+    };
+    
+    module.PointClusterer.prototype.removeActiveCluster = function(publishRemovalNotice) {
+	
+		this.activeClusterLatlng = null;
+		
+		$('.leaflet-marker-pane .active-marker').toggleClass('active-marker', false);
+		
+		if(publishRemovalNotice === true){
+			// Send a message that the active cluster has been removed
+			amplify.publish('activeClusterRemoved');
+		}
+        
+    };
+
+    module.PointClusterer.prototype.removeLayer = function(){
+	
+        this.map.off('moveend', this.mapMove, this);
+        this.map.off('click', this.removeActiveCluster, this);
+        this.map.removeLayer(this.layer);
+    
+    };
+
+    module.PointClusterer.prototype.replaceLayer = function(){
+        
+        this.map.on('moveend', this.mapMove, this);
+        this.map.on('click', function(){
+            // Remove the active marker and publish notification
+            this.removeActiveCluster(true);
+        }, this);
+        
+        this.clusterPoints();
+    
+    };
+    
 	return module;
 	
 }(QCluster || {}));

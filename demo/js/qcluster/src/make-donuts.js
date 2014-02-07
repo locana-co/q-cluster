@@ -22,7 +22,7 @@ var QCluster = (function(module){
             points = this.clusters[i].points;
             
             // Loop through the clusters points and summarize the points by counts per unique reporting attribute
-            var jMax = points.length - 1;
+
             for (var j = points.length - 1; j >= 0; j--) {
                   
                 // Split the comma delimited string of reporting ids; do this if the property value is a comma seperated list of values
