@@ -1,4 +1,7 @@
-quick-cluster
+
+q-cluster
 =============
 
-Quick point clustering code that get efficiency from ordering points by coordinate notation code.
+The new q-cluster library. Quick point clustering code that get sefficiency from ordering points by coordinate notation code.
+
+
