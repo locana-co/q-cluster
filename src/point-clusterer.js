@@ -251,29 +251,33 @@ var QCluster = (function(module){
 		    return [lng, lat];
 		};		
 		
-	module.PointClusterer = function(pointArr, layerId, map, opts){
+	module.PointClusterer = function(pointArr, layerId, map, clusterCssClass, opts){
 		
 		var options, pointArrLength, lng, lat, i, webMerc;
 		
 		options = opts || {};
 		
+        this.layerId = layerId;
+        this.clickHandler = options.clickHandler || null;
+        this.clusterCssClass = clusterCssClass;
 		this.map = map;
 		this.pointData = pointArr;
+        this.pointIdProperty = options.pointIdProperty || null;
 		this.tolerance = options.clusterTolerance || 130;
 		this.mapEdgeBuffer = options.mapEdgeBuffer || 100;
-		this.clusterCssClass = options.clusterCssClass || '';
 		this.layerVisibility = (typeof options.layerVisibility === 'boolean') ? options.layerVisibility : true;
 		this.reportingProperty = options.reportingProperty || null;
-		this.showReportDonuts = (typeof options.showReportDonuts === 'boolean') ? options.showReportDonuts : true;
         this.reportingDictionary = options.reportingDictionary || {};
         this.defaultPalette = options.defaultPalette || ['#8b722c', '#e7dfc7', '#040707', '#c96228', '#80adc0', 
                                                          '#a19788', '#ddecf2', '#9e0000', '#03671f', '#8e2b5c', 
                                                          '#e13066', '#5c8276', '#efa0cb', '#62517b', '#2c688b', 
                                                          '#56c2a7', '#e1df2f', '#ed3333', '#e69890', '#545454'];
-        
+        this.mapOrder = options.mapOrder || null
         this.reportingValueNA = options.reportingValueNA || {color: '#666666', label: 'NA'};
         this.donutIRFrac =  options.donutIRFrac || 0.4;
 		
+        this.activeCluster = null;
+        
         pointArrLength = pointArr.length;
 		
 		this.pointData = [];
@@ -363,7 +367,7 @@ var QCluster = (function(module){
 				divHtml = '<div><span>' + cnt +'</span></div>';
 				
 				// create the class name(s) for the leaflet marker div; the layer id added as the first additional class
-				divClass = this.layerId + ' leaflet-marker-icon q-marker-cluster ' + this.clusterCssClass;
+				divClass = 'leaflet-marker-icon q-marker-cluster ' + this.clusterCssClass;
 				
 				// differeniate class names based on cluster point count; clusters greater than one get a 'cluster id' class that matches a key in clustersDictionary object
 				if (cnt === 1) {
@@ -390,7 +394,7 @@ var QCluster = (function(module){
 					
 					divClass =  divClass + ' q-marker-cluster-small cId_' + clusterArr[i].id;
 					
-				} else if (cnt < 2500){
+				} else if (cnt < 1000){
 					
 					divClass = divClass + ' q-marker-cluster-medium cId_' + clusterArr[i].id;
 				} 
@@ -409,6 +413,18 @@ var QCluster = (function(module){
 				// instaniate the leaflet marker
 				clusterMarker = L.marker([lngLat[1], lngLat[0]], {icon:myIcon});
 				
+                clusterMarker["points"] = points;
+                clusterMarker["pointIds"] = [];
+                
+                if(this.pointIdProperty) {
+                    
+                    for(var j = points.length - 1; j >= 0; j--){
+                    
+                            clusterMarker["pointIds"].push(points[j][this.pointIdProperty]);
+                    
+                    }
+                }
+            
                 // Determine if all points within a cluster have the approximately same coordinates
                 clusterMarker['stacked'] = true;
                 
@@ -493,40 +509,37 @@ var QCluster = (function(module){
 		this.map.removeLayer(this.layer);
 		
 	    this.makeClusters();
-	};
-	
+	};	
     
     module.PointClusterer.prototype.markActiveCluster = function() {
-	
+		
+		if(this.activeCluster === null) {
+			return;
+		}
 		// When the user click on a cluster that can be made active (i.e., less than 20 points), the map centers on that cluster
 		// Of course, when that happens, the old clusters/layer gets destoyed and remade.  Thus we lose reference to the cluster
 		// that we clicked to make active.  However, the lat/lng of the orginally clicked cluster, will be identical to the new
 		// cluster that should be made active
-		var latlng;
-        
+		
 		// Loop thru all the 'markers' (aka _layers) in the map layer 
 		for(var i in this.layer._layers) {
 			
-			latlng = this.layer._layers[i]._latlng;
+			var latlng = this.layer._layers[i]._latlng;
 			
-			// If this marker's latlng === the clicked cluster latlng, add active-marker class to the divIcon
-			if(latlng.lat === this.activeClusterLatlng.lat && latlng.lng === this.activeClusterLatlng.lng ) {
+			// If this marker's latlng & point count === the clicked cluster's properties, add active-marker class to the divIcon
+			if(latlng.lat === this.activeCluster._latlng.lat && latlng.lng === this.activeCluster._latlng.lng ) {
 				$(this.layer._layers[i]._icon).toggleClass('active-marker', true);
 			}
 		}
 
     };
+
     
-    module.PointClusterer.prototype.removeActiveCluster = function(publishRemovalNotice) {
+    module.PointClusterer.prototype.removeActiveCluster = function() {
 	
-		this.activeClusterLatlng = null;
+		this.activeCluster = null;
 		
 		$('.leaflet-marker-pane .active-marker').toggleClass('active-marker', false);
-		
-		if(publishRemovalNotice === true){
-			// Send a message that the active cluster has been removed
-			amplify.publish('activeClusterRemoved');
-		}
         
     };
 
@@ -546,7 +559,7 @@ var QCluster = (function(module){
             this.removeActiveCluster(true);
         }, this);
         
-        this.clusterPoints();
+        this.makeClusters();
     
     };
     

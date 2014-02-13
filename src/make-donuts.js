@@ -7,10 +7,6 @@ var QCluster = (function(module){
             wrapper, color, pie, arc,
             svg, path, reportingArr, rId, clusters, numReportingCtr = 0;
          
-        //TMP
-        this.reportingProperty = 's_cls';
-        
-
         
         // Loop thru the this.clusters object  
         clusters = this.clusters;
@@ -130,7 +126,7 @@ var QCluster = (function(module){
                 .outerRadius(radius);
             
             // Note that we add 'clusterDonut' as a selector
-            svg = d3.select('.'+ this.layerId + '.' + i).append("svg")
+            svg = d3.select('.' + this.clusterCssClass + '.' + i).append("svg")
                 .attr("class", "clusterDonut")
                 .attr("width", width)
                 .attr("height", height)
