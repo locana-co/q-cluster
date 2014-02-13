@@ -9,3 +9,18 @@
 .sass-cache/*
 css/.sass-cache/*
 .scssc
+
+# Ignore Grunt temp files
+.grunt
+
+# Ignore environment variables set on this machine
+.env
+
+._*
+.Spotlight-V100
+# SublimeText
+/*.sublime-project
+*.sublime-workspace
+
+#Node
+/node_modules
