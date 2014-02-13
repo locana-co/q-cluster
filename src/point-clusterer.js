@@ -251,20 +251,20 @@ var QCluster = (function(module){
 		    return [lng, lat];
 		};		
 		
-	module.PointClusterer = function(pointArr, layerId, map, opts){
+	module.PointClusterer = function(pointArr, layerId, map, clusterCssClass, opts){
 		
 		var options, pointArrLength, lng, lat, i, webMerc;
 		
 		options = opts || {};
 		
+        this.layerId = layerId;
+        this.clusterCssClass = clusterCssClass;
 		this.map = map;
 		this.pointData = pointArr;
 		this.tolerance = options.clusterTolerance || 130;
 		this.mapEdgeBuffer = options.mapEdgeBuffer || 100;
-		this.clusterCssClass = options.clusterCssClass || '';
 		this.layerVisibility = (typeof options.layerVisibility === 'boolean') ? options.layerVisibility : true;
 		this.reportingProperty = options.reportingProperty || null;
-		this.showReportDonuts = (typeof options.showReportDonuts === 'boolean') ? options.showReportDonuts : true;
         this.reportingDictionary = options.reportingDictionary || {};
         this.defaultPalette = options.defaultPalette || ['#8b722c', '#e7dfc7', '#040707', '#c96228', '#80adc0', 
                                                          '#a19788', '#ddecf2', '#9e0000', '#03671f', '#8e2b5c', 
@@ -363,7 +363,7 @@ var QCluster = (function(module){
 				divHtml = '<div><span>' + cnt +'</span></div>';
 				
 				// create the class name(s) for the leaflet marker div; the layer id added as the first additional class
-				divClass = this.layerId + ' leaflet-marker-icon q-marker-cluster ' + this.clusterCssClass;
+				divClass = 'leaflet-marker-icon q-marker-cluster ' + this.clusterCssClass;
 				
 				// differeniate class names based on cluster point count; clusters greater than one get a 'cluster id' class that matches a key in clustersDictionary object
 				if (cnt === 1) {
@@ -493,8 +493,7 @@ var QCluster = (function(module){
 		this.map.removeLayer(this.layer);
 		
 	    this.makeClusters();
-	};
-	
+	};	
     
     module.PointClusterer.prototype.markActiveCluster = function() {
 	
