@@ -523,7 +523,7 @@ var QCluster = (function(module){
 					
 					divHtml = '<div><div class="q-marker-single-default"><span>' + cnt +'</span></div></div></div>';
 					
-					divClass = divClass + 'q-marker-cluster-single';
+					divClass = divClass + ' q-marker-cluster-single'; 
 					
 					// Color single points by classification color?
 					if(this.reportingProperty !== null) {
