@@ -12,8 +12,8 @@ $(document).ready(function(){
 	success: function(data, textStatus, jqXHR){
 		
 		
-		var pointClusterer = new QCluster.PointClusterer(data, 'testLayer', map, {});
-		
+		var pointClusterer = new QCluster.PointClusterer(data, 'fires', map, 'fire-layer',
+                                                        {reportingProperty: 's_cls'});
 		
 	},
 	error: function(jqXHR, textStatus, errorThrown){
