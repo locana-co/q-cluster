@@ -42,7 +42,7 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-contrib-watch');
     
     // 4. Where we tell Grunt what to do when we type "grunt" into the terminal.
-    grunt.registerTask('default', ['uglify', 'concat', 'copy']);
+    grunt.registerTask('default', ['uglify', 'concat']);
 	
 	
 };
