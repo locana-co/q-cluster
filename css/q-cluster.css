@@ -1,6 +1,6 @@
 /* Source: clusters.scss */
 .q-marker-cluster {
-  background-color: white;
+  background-color: #666;
   color: white;
   background-clip: border-box;
   text-align: center;
@@ -11,13 +11,6 @@
 .q-marker-cluster.active-marker {
   background-color: #ffde01;
   border: 3px solid #ffde01; }
-
-.q-marker-cluster > div {
-  margin-left: 2px;
-  margin-top: 2px;
-  text-align: center;
-  border-radius: 50%;
-  background-color: #666; }
 
 .q-marker-cluster > div > span, .q-marker-cluster > div > div > span {
   position: relative;
