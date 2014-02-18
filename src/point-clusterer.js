@@ -259,6 +259,7 @@ var QCluster = (function(module){
 		
         this.layerId = layerId;
         this.clickHandler = options.clickHandler || null;
+        this.backgroundColor = options.backgroundColor || null;
         this.clusterCssClass = clusterCssClass;
 		this.map = map;
 		this.pointData = pointArr;
@@ -364,7 +365,11 @@ var QCluster = (function(module){
 				cnt = points.length;
 				
 				// Create custom HTML inside of each leaflet marker div
-				divHtml = '<div><span>' + cnt +'</span></div>';
+				if ( this.backgroundColor ) {
+					divHtml = '<div style="background-color: ' + this.backgroundColor + ';"><span>' + cnt +'</span></div>';
+				} else {
+					divHtml = '<div><span>' + cnt +'</span></div>';
+				}
 				
 				// create the class name(s) for the leaflet marker div; the layer id added as the first additional class
 				divClass = 'leaflet-marker-icon q-marker-cluster ' + this.clusterCssClass;

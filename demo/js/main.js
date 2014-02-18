@@ -13,7 +13,10 @@ $(document).ready(function(){
 		
 		
 		var pointClusterer = new QCluster.PointClusterer(data, 'fires', map, 'fire-layer',
-                                                        {reportingProperty: 's_cls'});
+                                                    {
+                                                        reportingProperty: 's_cls',
+                                                        backgroundColor: '#0099dd'
+                                                    });
 		
 	},
 	error: function(jqXHR, textStatus, errorThrown){
