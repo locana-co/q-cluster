@@ -146,6 +146,51 @@ var QCluster = (function(module){
 		return clusters;
 	};
 	
+		// Public Methods
+	module.moreThanOneCluster = function(pointArr, resolution, clusterTolerance) {
+		
+		
+		var ctr = 0,
+			c,
+			index,
+			i,
+			clusters = [],
+			currentCluster;
+		
+		var points = pointArr;
+		var pLength = points.length;
+
+		for(var i = pLength - 1; i >= 0; i--){
+			points[i]['c'] = null
+		}
+	
+		// loop thru the point array
+		for(var index = pLength - 1; index >= 0; index--){
+			
+			if (!points[index].c) //skip already clustered pins
+	        {
+	        	
+	        	currentCluster = {'id': ctr, 'points':[], 'xSum': 0, 'ySum':0, 'cX':null, 'cY':null};
+	        	ctr++;
+	        	currentCluster.points.push(points[index]);
+	        	
+	        	//look backwards in the list for any points within the range, return after we hit a point that exceeds range
+	        	addPinsWithinRange(points, index, -1, currentCluster, resolution, clusterTolerance);
+	 
+	            //look forwards in the list for any points within the range, return after we hit a point that exceeds range 
+	            addPinsWithinRange(points, index, 1, currentCluster, resolution, clusterTolerance);
+	 			
+	 			// Add the cluster to the storage array
+	 			clusters.push(currentCluster);
+	        }
+	    }
+		
+		if(clusters.length > 1) {
+			return true;
+		}
+		
+		return false;
+	};
 	return module;
 	
 }(QCluster || {}));

@@ -258,7 +258,7 @@ var QCluster = (function(module){
 		options = opts || {};
 		
         this.layerId = layerId;
-        this.clickHandler = options.clickHandler || null;
+        this.clickHandler = options.clickHandler || this.defaultClickHandler;
         this.backgroundColor = options.backgroundColor || '#666666';
         this.clusterCssClass = clusterCssClass;
 		this.map = map;
@@ -568,6 +568,37 @@ var QCluster = (function(module){
     
     };
     
+    module.PointClusterer.prototype.defaultClickHandler = function(e) {
+	
+		var clusterLayer,
+			cluster,
+			priorActiveCluster, currentZoom, points, mapBounds, resolution, mmaxZoom;
+			
+		clusterLayer = this;
+        clusterLayer.removeActiveCluster();
+
+		cluster = e.target;
+
+		//Get the points for this cluster
+		points = cluster.points;
+		
+		maxZoom = this.map.getMaxZoom();
+		currentZoom = this.map.getZoom();       
+		
+        // Calculate the map's resolutions (px/meter)
+		resolution = getResolution(this.map, this.map.getBounds());
+
+		for(var i = currentZoom; i < maxZoom; i++) {
+
+			if(module.moreThanOneCluster(points, resolution/this.map.getZoomScale(i), this.tolerance)) {
+				break;
+			}
+
+		}
+
+		this.map.setView(cluster._latlng, i);	
+        
+    };
 	return module;
 	
 }(QCluster || {}));
