@@ -12,10 +12,11 @@ $(document).ready(function(){
 	success: function(data, textStatus, jqXHR){
 		
 		
-		var pointClusterer = new QCluster.PointClusterer(data, 'fires', map, 'fire-layer',
+		pointClusterer = new QCluster.PointClusterer(data, 'fires', map, 'fire-layer',
                                                     {
                                                         reportingProperty: 's_cls',
-                                                        backgroundColor: '#0099dd'
+                                                        backgroundColor: '#0099dd',
+                                                        dataFormat: 'GeoJSON'
                                                     });
 		
 	},
