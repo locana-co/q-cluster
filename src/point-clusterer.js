@@ -114,7 +114,8 @@ var QCluster = (function(module){
 		      LETTER_A_OFFSET, 
 		      ZERO_OFFSET, 
 		      QUAD, 
-		      ROUND_ERROR;
+		      ROUND_ERROR,
+		      ABC;
 		
 		  ABC = 'ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ';
 		
