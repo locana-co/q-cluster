@@ -251,9 +251,62 @@ var QCluster = (function(module){
 			
 		    return [lng, lat];
 		};		
+
+	function processGeoJson(geoJson) {
+		var pointData, features, i, len, feature, pointObj, lng, lat, webMerc;
+
+		pointData = [];
+		features = geoJson.features;
+		len = features.length;
+
+		for (i = len - 1; i >= 0; --i) {
+			feature = features[i];
+			pointObj = features[i].properties;
+			lng = feature.geometry.coordinates[0];
+			lat = feature.geometry.coordinates[1];
+
+			// Convert to Web Mercator
+			webMerc = L.CRS.EPSG3857.project(L.latLng(lat, lng));
+
+			// Calculate georef and add it and web merc coords to object
+			pointData.push($.extend(true, {
+				georef: geodeticToGeoRef(lng,lat,4),
+				lng: lng,
+				lat: lat,
+				x: webMerc.x,
+				y: webMerc.y
+			}, pointObj));
+		}
+
+		return pointData.sort(sortGeoRef);
+	}
+
+	function processPointArray(pointArr) {
+		var pointData, i, len, pointObj, webMerc;
+
+		pointData = [];
+		len = pointArr.length;
+
+		for (i = len - 1; i >= 0; --i) {
+			pointObj = pointArr[i];
+			lng = pointObj.lng;
+			lat = pointObj.lat;
+
+            // Convert to Web Mercator
+			webMerc = L.CRS.EPSG3857.project(L.latLng(lat, lng));
+			
+            // Calculate georef and add it and web merc coords to object
+			pointData.push($.extend(true, {
+				georef: geodeticToGeoRef(lng,lat,4),
+				x: webMerc.x,
+				y: webMerc.y
+			}, pointObj));
+		}
+
+		return pointData.sort(sortGeoRef);
+	}
 		
 	module.PointClusterer = function(pointArr, layerId, map, clusterCssClass, opts){
-		
 		var options, pointArrLength, lng, lat, i, webMerc;
 		
 		options = opts || {};
@@ -261,9 +314,9 @@ var QCluster = (function(module){
         this.layerId = layerId;
         this.clickHandler = options.clickHandler || this.defaultClickHandler;
         this.backgroundColor = options.backgroundColor || '#666666';
+        this.dataFormat = options.dataFormat ? options.dataFormat.toLowerCase() : 'pointarray'; 
         this.clusterCssClass = clusterCssClass;
 		this.map = map;
-		this.pointData = pointArr;
         this.pointIdProperty = options.pointIdProperty || null;
 		this.tolerance = options.clusterTolerance || 130;
 		this.mapEdgeBuffer = options.mapEdgeBuffer || 100;
@@ -282,28 +335,12 @@ var QCluster = (function(module){
         
         pointArrLength = pointArr.length;
 		
-		this.pointData = [];
-		
-		for(i = pointArrLength - 1; i >= 0; i--) {
-			
-			lat = pointArr[i].lat;
-			lng = pointArr[i].lng;
-			
-            // Convert to Web Mercator
-			webMerc = L.CRS.EPSG3857.project(L.latLng(lat, lng));
-			
-            // Calculate georef and add it and web merc coords to object
-			this.pointData.push($.extend(true, {
-									georef: geodeticToGeoRef(lng,lat,4),
-									x: webMerc.x,
-									y: webMerc.y
-									}, pointArr[i]));
-            
+		if (this.dataFormat === 'geojson') {
+			this.pointData = processGeoJson(pointArr);
+		} else { // point array
+			this.pointData = processPointArray(pointArr);
 		}
-		
-        // Sort the array by georef
-		this.pointData.sort(sortGeoRef);
-			
+
 		// Do the clustering
 		this.makeClusters();
 		
