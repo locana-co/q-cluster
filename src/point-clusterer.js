@@ -117,7 +117,7 @@ var QCluster = (function(module){
 		      ROUND_ERROR,
 		      ABC;
 		
-		  ABC = 'ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ';
+		  var ABC = 'ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ';
 		
 		  LATITUDE_LOW = -90.0;           /* Minimum latitude                      */
 		  LATITUDE_HIGH = 90.0;           /* Maximum latitude                      */
