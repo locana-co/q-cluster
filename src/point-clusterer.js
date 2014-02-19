@@ -627,7 +627,7 @@ var QCluster = (function(module){
 		resolution = getResolution(this.map, this.map.getBounds());
 
 		// Loop thru higher zoom levels
-		for(var i = currentZoom; i < maxZoom; i++) {
+		for(var i = currentZoom + 1; i < maxZoom; i++) {
 
 			if(module.moreThanOneCluster(points, resolution/this.map.getZoomScale(i), this.tolerance)) {
 				break;
