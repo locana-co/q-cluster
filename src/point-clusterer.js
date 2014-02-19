@@ -610,7 +610,7 @@ var QCluster = (function(module){
 	
 		var clusterLayer,
 			cluster,
-			priorActiveCluster, currentZoom, points, mapBounds, resolution, mmaxZoom;
+			priorActiveCluster, currentZoom, points, mapBounds, resolution, maxZoom;
 			
 		clusterLayer = this;
         clusterLayer.removeActiveCluster();
