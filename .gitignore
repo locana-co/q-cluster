@@ -25,6 +25,3 @@ css/.sass-cache/*
 #Node
 /node_modules
 
-#Demo Dev dir
-/demo-dev
-/demo-dev/*
