@@ -1,6 +1,6 @@
 $(document).ready(function(){
 	
-	var map = L.map('map').setView([38.5, -97], 4);
+	var map = L.map('map').setView([8.54, 10], 6);
             
     map.addLayer(L.tileLayer('http://{s}.tiles.mapbox.com/v3/643gwozdz.h00dfolo/{z}/{x}/{y}.png', {}));
            
@@ -8,14 +8,15 @@ $(document).ready(function(){
 	context: this,
 	type: 'GET',
 	dataType: "json",
-	url: 'data/fires2012.json',
+	url: 'data/nigeria-sample-small.geojson',
 	success: function(data, textStatus, jqXHR){
 		
 		
-		var pointClusterer = new QCluster.PointClusterer(data, 'fires', map, 'fire-layer',
+		pointClusterer = new QCluster.PointClusterer(data, 'nigeria', map, 'nigeria-layer',
                                                     {
-                                                        reportingProperty: 's_cls',
-                                                        backgroundColor: '#0099dd'
+                                                        reportingProperty: 'landuse',
+                                                        backgroundColor: '#0099dd',
+                                                        dataFormat: 'GeoJSON'
                                                     });
 		
 	},

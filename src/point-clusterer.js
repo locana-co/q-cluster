@@ -361,9 +361,12 @@ var QCluster = (function(module){
         
         pointArrLength = pointArr.length;
 		
-		this.pointData = processPointArray(pointArr);
+		if (this.dataFormat === 'geojson') {
+			this.pointData = processGeoJson(pointArr);
+		} else { // point array
+			this.pointData = processPointArray(pointArr);
+		}
 
-			
 		// Do the clustering
 		this.makeClusters();
 		
