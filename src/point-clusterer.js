@@ -420,7 +420,7 @@ var QCluster = (function(module){
 					divClass = divClass + ' q-marker-cluster-single';
 					
 					// Color single points by classification color?
-					if(this.reportingProperty !== null) {
+					if(this.reportingProperty !== null && points[0][this.reportingProperty]) {
                         
 						// Use color of first reporting id
 						classificationIds = points[0][this.reportingProperty].toString().split(',');
@@ -513,7 +513,7 @@ var QCluster = (function(module){
  
 		//}
 		
-       this.clusters = clusterDictionary;
+        this.clusters = clusterDictionary;
         
 		// instaniate a leaflet feature group that contains our clusters
 		this.layer = L.featureGroup(clusterMarkers);
@@ -531,7 +531,8 @@ var QCluster = (function(module){
 				$('.' + this.layerId).css('z-index', this.mapOrder);
 			}
 			
-            if(this.reportingProperty) {
+			// check if reporting property is actually in the points object
+            if(this.reportingProperty && clusterDictionary[Object.keys(clusterDictionary)[0]].points[this.reportingProperty]) {
                 this.makeDonuts();
             }
 			
