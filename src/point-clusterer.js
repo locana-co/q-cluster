@@ -532,7 +532,7 @@ var QCluster = (function(module){
 			}
 			
 			// check if reporting property is actually in the points object
-            if(this.reportingProperty && clusterDictionary[Object.keys(clusterDictionary)[0]].points[this.reportingProperty]) {
+            if(this.reportingProperty && clusterDictionary[Object.keys(clusterDictionary)[0]].points[0][this.reportingProperty]) {
                 this.makeDonuts();
             }
 			
