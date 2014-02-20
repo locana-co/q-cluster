@@ -21,8 +21,6 @@ var QCluster = (function(module){
 
             for (var j = points.length - 1; j >= 0; j--) {
                   
-                if (!points[j][this.reportingProperty]) break;
-
                 // Split the comma delimited string of reporting ids; do this if the property value is a comma seperated list of values
                 reportingArr = points[j][this.reportingProperty].toString().split(',');
                 
