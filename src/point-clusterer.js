@@ -319,7 +319,7 @@ var QCluster = (function(module){
 		this.map = map;
         this.pointIdProperty = options.pointIdProperty || null;
 		this.tolerance = options.clusterTolerance || 130;
-		this.mapEdgeBuffer = options.mapEdgeBuffer || 100;
+		this.mapEdgeBuffer = options.mapEdgeBuffer || module.Utils.HypotenuseOfMapAsInt(map);
 		this.layerVisibility = (typeof options.layerVisibility === 'boolean') ? options.layerVisibility : true;
 		this.reportingProperty = options.reportingProperty || null;
         this.reportingDictionary = options.reportingDictionary || {};
