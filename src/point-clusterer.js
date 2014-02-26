@@ -305,7 +305,7 @@ var QCluster = (function(module){
 
 		return pointData.sort(sortGeoRef);
 	}
-		
+
 	module.PointClusterer = function(pointArr, layerId, map, clusterCssClass, opts){
 		var options, pointArrLength, lng, lat, i, webMerc;
 		
@@ -314,6 +314,7 @@ var QCluster = (function(module){
         this.layerId = layerId;
         this.clickHandler = options.clickHandler || this.defaultClickHandler;
         this.mouseoverHandler = options.mouseoverHandler || this.defaultMouseoverHandler;
+        this.mouseoutHandler = options.mouseoutHandler || this.defaultMouseoutHandler;
         this.backgroundColor = options.backgroundColor || '#666666';
         this.dataFormat = options.dataFormat ? options.dataFormat.toLowerCase() : 'pointarray'; 
         this.clusterCssClass = clusterCssClass;
@@ -347,6 +348,10 @@ var QCluster = (function(module){
 		
 		//  When the map pans or zooms, fire this.mapMove
 		this.map.on('moveend', this.mapMove, this);
+
+		// Remove the indicator points when the map zooms. 
+		// The mouseout event won't be fired (because the mouse is still there)...
+		this.map.on('zoomstart', this.removeIndicatorPoints, this);
 		
 		return this;
 		
@@ -499,6 +504,10 @@ var QCluster = (function(module){
 						clusterMarker.on('mouseover', this.mouseoverHandler, this);
 					}
                     
+                    if (this.mouseoutHandler) {
+                    	clusterMarker.on('mouseout', this.mouseoutHandler, this);
+                    }
+
 					if(this.idProperty){
 						clusterMarker['pointIds'] = [];
 					
@@ -553,7 +562,6 @@ var QCluster = (function(module){
 		if(!$(this.map._container).is(":visible")) {
 			return;
 		}
-		
 		this.map.removeLayer(this.layer);
 		
 	    this.makeClusters();
@@ -645,9 +653,10 @@ var QCluster = (function(module){
     };
 
     module.PointClusterer.prototype.defaultMouseoverHandler = function(e) {
-    	// if (this.mouseoverGroup) return;
-    	var cluster = e.target;
-    	var points = cluster.points;
+    	if (this.mouseoverGroup) return;
+    	
+    	this.mouseoverCluster = e.target;
+    	var points = this.mouseoverCluster.points;
     	var len = points.length;
     	this.mouseoverGroup = L.layerGroup();
     	for(var i=len-1; i>=0; --i) {
@@ -663,16 +672,25 @@ var QCluster = (function(module){
     		var latLng = L.latLng([p.lat, p.lng]);
     		var circle = new L.CircleMarker(latLng, {
     			radius: 3,
-    			color: color
+    			color: color,
+    			fillOpacity: .3,
+    			opacity: 0
     		});
     		this.mouseoverGroup.addLayer(circle);
     	}
     	this.mouseoverGroup.addTo(this.map);
     };
 
-    module.PointClusterer.prototype.defaultMouseoutHandler = function(e) {
+    module.PointClusterer.prototype.removeIndicatorPoints = function() {
+		this.mouseoverCluster = null;
+		if (this.map && this.map.removeLayer && this.mouseoverGroup)
+			this.map.removeLayer(this.mouseoverGroup);
+		delete this.mouseoverGroup;
+	};
 
-    }
+    module.PointClusterer.prototype.defaultMouseoutHandler = function(e) {
+    	this.removeIndicatorPoints();
+    };
 
 	return module;
 	
