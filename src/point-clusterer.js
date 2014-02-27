@@ -323,7 +323,7 @@ var QCluster = (function(module){
 		this.layerVisibility = (typeof options.layerVisibility === 'boolean') ? options.layerVisibility : true;
 		this.reportingProperty = options.reportingProperty || null;
 		if (options.reportingDictionary) {
-			this.addReportingDictionary(options.reportingDictionary)
+			this.addReportingPropertyDictionary(options.reportingDictionary)
 		} else {
 			this.reportingDictionary = {};
 		}
@@ -666,7 +666,7 @@ var QCluster = (function(module){
     		if (color) this.reportingDictionary[key].color = color;
     		var label = this.reportingDictionary[key].InfoLabel;
     		if (label) this.reportingDictionary[key].label = label;
-    	});
+    	}, this);
     };
 
 	return module;
