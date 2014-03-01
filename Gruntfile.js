@@ -22,8 +22,8 @@ module.exports = function(grunt) {
         concat: {
 
             dist: {
-              src: ['src/clustering.js', 'src/point-clusterer.js', 'src/make-donuts.js', 'src/utils.js'],
-              dest: 'lib/q-cluster.js',
+              src: ['src/utils.js', 'src/clustering.js', 'src/point-clusterer.js', 'src/make-donuts.js'],
+              dest: 'lib/q-cluster.js'
             }
         },
 
