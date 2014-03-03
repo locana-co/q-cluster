@@ -253,20 +253,26 @@ var QCluster = (function(module){
 		};		
 
 	function processGeoJson(geoJson) {
-		var pointData, features, i, len, feature, pointObj, lng, lat, webMerc;
+        var features = [];
 
-		pointData = [];
-		features = geoJson.features;
-		len = features.length;
+        // You can feed in an array of several GeoJSON objects.
+        if (geoJson instanceof Array) {
+            for (var i = geoJson.length - 1; i >= 0; --i) {
+                features = features.concat(geoJson[i].features);
+            }
+        } else {
+            features = geoJson.features;
+        }
 
-		for (i = len - 1; i >= 0; --i) {
-			feature = features[i];
-			pointObj = features[i].properties;
-			lng = feature.geometry.coordinates[0];
-			lat = feature.geometry.coordinates[1];
+        var pointData = [];
+		for (var j = features.length - 1; j >= 0; --j) {
+			var feature = features[j];
+			var pointObj = features[j].properties;
+			var lng = feature.geometry.coordinates[0];
+			var lat = feature.geometry.coordinates[1];
 
 			// Convert to Web Mercator
-			webMerc = L.CRS.EPSG3857.project(L.latLng(lat, lng));
+			var webMerc = L.CRS.EPSG3857.project(L.latLng(lat, lng));
 
 			// Calculate georef and add it and web merc coords to object
 			pointData.push($.extend(true, {
@@ -305,11 +311,10 @@ var QCluster = (function(module){
 
 		return pointData.sort(sortGeoRef);
 	}
-		
+
+
 	module.PointClusterer = function(pointArr, layerId, map, clusterCssClass, opts){
-		var options, pointArrLength, lng, lat, i, webMerc;
-		
-		options = opts || {};
+		var options = opts || {};
 		
         this.layerId = layerId;
         this.clickHandler = options.clickHandler || this.defaultClickHandler;
@@ -336,14 +341,12 @@ var QCluster = (function(module){
         this.donutIRFrac =  options.donutIRFrac || 0.4;
 		
         this.activeCluster = null;
-        
-        pointArrLength = pointArr.length;
-		
-		if (this.dataFormat === 'geojson') {
-			this.pointData = processGeoJson(pointArr);
-		} else { // point array
-			this.pointData = processPointArray(pointArr);
-		}
+
+        if (this.dataFormat === 'geojson') {
+            this.pointData = processGeoJson(pointArr);
+        } else {
+            this.pointData = processPointArray(pointArr);
+        }
 
 		// Do the clustering
 		this.makeClusters();
@@ -354,14 +357,14 @@ var QCluster = (function(module){
 		return this;
 		
 	};
-	
-	module.PointClusterer.prototype.makeClusters = function(map, layer, clusterTolerance, mapBounds) {
-	
+
+	module.PointClusterer.prototype.makeClusters = function() {
 
 		var clusterArr, clusterDictionary, cnt,divHtml,divClass,myIcon,
-			latlon,points,clusterMarker,classificationIds, mapBounds,
-			resolution, webMercMapBounds, clusterLength, i
-			clusterMarkers = [], lats = [], lngs = [];
+			points,clusterMarker,classificationIds, mapBounds,
+			resolution, webMercMapBounds, clusterLength, i;
+
+        var clusterMarkers = [], lats = [], lngs = [];
 	
 		// If map is not visible, don't proceed
 		if(!$(this.map._container).is(":visible")) {
@@ -549,6 +552,15 @@ var QCluster = (function(module){
 
 	};
 
+    module.PointClusterer.prototype.remakeClusters = function(data) {
+        if (this.dataFormat === 'geojson') {
+            this.pointData = processGeoJson(data);
+        } else {
+            this.pointData = processPointArray(data);
+        }
+        this.makeClusters();
+    }
+
 	module.PointClusterer.prototype.mapMove = function(){
 		if(!$(this.map._container).is(":visible")) {
 			return;
@@ -581,7 +593,6 @@ var QCluster = (function(module){
 		}
 
     };
-
     
     module.PointClusterer.prototype.removeActiveCluster = function() {
 	
