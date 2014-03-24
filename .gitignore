@@ -25,3 +25,10 @@ css/.sass-cache/*
 #Node
 /node_modules
 
+############## Jetbrains Stuff ###############
+*.iws
+workspace.xml
+tasks.xml
+*.iml
+.idea/
+
