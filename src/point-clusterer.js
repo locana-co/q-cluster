@@ -253,20 +253,43 @@ var QCluster = (function(module){
 		};		
 
 	function processGeoJson(geoJson) {
-		var pointData, features, i, len, feature, pointObj, lng, lat, webMerc;
+        var features = [];
 
-		pointData = [];
-		features = geoJson.features;
-		len = features.length;
+        // You can just give it regular GeoJSON...
+        if (geoJson.features) {
+            features = geoJson.features;
+        }
 
-		for (i = len - 1; i >= 0; --i) {
-			feature = features[i];
-			pointObj = features[i].properties;
-			lng = feature.geometry.coordinates[0];
-			lat = feature.geometry.coordinates[1];
+        // You can feed in an array of several GeoJSON objects...
+        else if (geoJson instanceof Array) {
+            for (var i = geoJson.length - 1; i >= 0; --i) {
+                features = features.concat(geoJson[i].features);
+            }
+        }
+
+        // You can also feed it an object that has GeoJSON in it...
+        else if (geoJson[Object.keys(geoJson)[0]].features) {
+            for (var key in geoJson) {
+                if (geoJson[key].features)
+                    features = features.concat(geoJson[key].features);
+            }
+        }
+
+        // Oops... Bad data.
+        else {
+            console.err('Faulty Data. No GeoJSON found.');
+            return [];
+        }
+
+        var pointData = [];
+		for (var j = features.length - 1; j >= 0; --j) {
+			var feature = features[j];
+			var pointObj = features[j].properties;
+			var lng = feature.geometry.coordinates[0];
+			var lat = feature.geometry.coordinates[1];
 
 			// Convert to Web Mercator
-			webMerc = L.CRS.EPSG3857.project(L.latLng(lat, lng));
+			var webMerc = L.CRS.EPSG3857.project(L.latLng(lat, lng));
 
 			// Calculate georef and add it and web merc coords to object
 			pointData.push($.extend(true, {
