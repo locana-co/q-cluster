@@ -75,73 +75,73 @@ var QCluster = (function(module){
 	};
 	
 	// Public Methods
-	module.clusterPoints = function(points, mapBounds, resolution, clusterTolerance) {
-		
-        function withinBounds(x, y, xmin, xmax, ymin, ymax) {
-			if(x > xmax || x < xmin || y > ymax || y < ymin ) {
-				return false;
-			}
-			else {
-				return true;
-			}
-		}
-		
-		var ctr = 0,
-			c,
-			clusters = [],
-			currentCluster;
+  module.clusterPoints = function (points, mapBounds, resolution, clusterTolerance) {
 
-        var pLength = points.length;
-		
-		for(var i = pLength - 1; i >= 0; i--){
-			points[i]['c'] = null
-		}
-	
-		// loop thru the point array
-		for(var index = pLength - 1; index >= 0; index--){
-			
-			if (!points[index].c && withinBounds(points[index].x, 
-	    			points[index].y, mapBounds.xmin, mapBounds.xmax, 
-	    			mapBounds.ymin, mapBounds.ymax)) //skip already clustered pins
-	        {
-	        	
-	        	currentCluster = {'id': ctr, 'points':[], 'xSum': 0, 'ySum':0, 'cX':null, 'cY':null};
-	        	ctr++;
-	        	currentCluster.points.push(points[index]);
-	        	
-	        	//look backwards in the list for any points within the range, return after we hit a point that exceeds range
-	        	addPinsWithinRange(points, index, -1, currentCluster, resolution, clusterTolerance);
-	 
-	            //look forwards in the list for any points within the range, return after we hit a point that exceeds range 
-	            addPinsWithinRange(points, index, 1, currentCluster, resolution, clusterTolerance);
-	 			
-	 			// Add the cluster to the storage array
-	 			clusters.push(currentCluster);
-	        }
-	    }
-		
-		// Loop thru the created clusters and find the center of all cluster points
-		for(var j =0, iMax = clusters.length; j < iMax; j++) {
-			
-			c = clusters[j];
-			
-			// Average the x, y coordinates
-			for(var k =0, kMax = c.points.length; k < kMax; k++) {
-			
-				c.xSum = c.xSum + c.points[k].x;
-				c.ySum = c.ySum + c.points[k].y;
-			
-			}
-			c.cX = c.xSum / c.points.length;
-			c.cY = c.ySum / c.points.length;
-			
-			// delete the coordinate sum properties
-			delete c.xSum;
-			delete c.ySum;	
-		}
-		
-		return clusters;
-	};
+    function withinBounds(x, y, xmin, xmax, ymin, ymax) {
+      if (x > xmax || x < xmin || y > ymax || y < ymin) {
+        return false;
+      }
+      else {
+        return true;
+      }
+    }
+
+    var ctr = 0,
+        c,
+        clusters = [],
+        currentCluster;
+
+    var pLength = points.length;
+
+    for (var i = pLength - 1; i >= 0; i--) {
+      points[i]['c'] = null
+    }
+
+    // loop thru the point array
+    for (var index = pLength - 1; index >= 0; index--) {
+
+      if (!points[index].c && withinBounds(points[index].x,
+        points[index].y, mapBounds.xmin, mapBounds.xmax,
+        mapBounds.ymin, mapBounds.ymax)) //skip already clustered pins
+      {
+
+        currentCluster = {'id': ctr, 'points': [], 'xSum': 0, 'ySum': 0, 'cX': null, 'cY': null};
+        ctr++;
+        currentCluster.points.push(points[index]);
+
+        //look backwards in the list for any points within the range, return after we hit a point that exceeds range
+        addPinsWithinRange(points, index, -1, currentCluster, resolution, clusterTolerance);
+
+        //look forwards in the list for any points within the range, return after we hit a point that exceeds range
+        addPinsWithinRange(points, index, 1, currentCluster, resolution, clusterTolerance);
+
+        // Add the cluster to the storage array
+        clusters.push(currentCluster);
+      }
+    }
+
+    // Loop thru the created clusters and find the center of all cluster points
+    for (var j = 0, iMax = clusters.length; j < iMax; j++) {
+
+      c = clusters[j];
+
+      // Average the x, y coordinates
+      for (var k = 0, kMax = c.points.length; k < kMax; k++) {
+
+        c.xSum = c.xSum + c.points[k].x;
+        c.ySum = c.ySum + c.points[k].y;
+
+      }
+      c.cX = c.xSum / c.points.length;
+      c.cY = c.ySum / c.points.length;
+
+      // delete the coordinate sum properties
+      delete c.xSum;
+      delete c.ySum;
+    }
+
+    return clusters;
+  };
 	
 		// Public Methods
 	module.moreThanOneCluster = function(points, resolution, clusterTolerance) {
