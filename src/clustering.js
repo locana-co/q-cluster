@@ -98,7 +98,7 @@ var QCluster = (function(module){
     for (var index = pLength - 1; index >= 0; index--) {
 
       if (! points[index].c &&
-        //skip already clustered pins
+            //skip already clustered pins
             withinBounds( points[index].x, points[index].y,
                           mapBounds.xmin, mapBounds.xmax,
                           mapBounds.ymin, mapBounds.ymax)) {
