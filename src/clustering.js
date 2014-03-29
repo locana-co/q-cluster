@@ -80,17 +80,14 @@ var QCluster = (function(module){
     function withinBounds(x, y, xmin, xmax, ymin, ymax) {
       if (x > xmax || x < xmin || y > ymax || y < ymin) {
         return false;
-      }
-      else {
+      } else {
         return true;
       }
     }
 
-    var ctr = 0,
-        c,
-        clusters = [],
-        currentCluster;
-
+    var ctr = 0;
+    var clusters = [];
+    var currentCluster = null;
     var pLength = points.length;
 
     for (var i = pLength - 1; i >= 0; i--) {
@@ -100,10 +97,11 @@ var QCluster = (function(module){
     // loop thru the point array
     for (var index = pLength - 1; index >= 0; index--) {
 
-      if (!points[index].c && withinBounds(points[index].x,
-        points[index].y, mapBounds.xmin, mapBounds.xmax,
-        mapBounds.ymin, mapBounds.ymax)) //skip already clustered pins
-      {
+      if (! points[index].c &&
+        //skip already clustered pins
+            withinBounds( points[index].x, points[index].y,
+                          mapBounds.xmin, mapBounds.xmax,
+                          mapBounds.ymin, mapBounds.ymax)) {
 
         currentCluster = {'id': ctr, 'points': [], 'xSum': 0, 'ySum': 0, 'cX': null, 'cY': null};
         ctr++;
@@ -123,7 +121,7 @@ var QCluster = (function(module){
     // Loop thru the created clusters and find the center of all cluster points
     for (var j = 0, iMax = clusters.length; j < iMax; j++) {
 
-      c = clusters[j];
+      var c = clusters[j];
 
       // Average the x, y coordinates
       for (var k = 0, kMax = c.points.length; k < kMax; k++) {
