@@ -6,3 +6,9 @@ The new q-cluster library. Quick point clustering code that get sefficiency from
 
 
 Q-Cluster is currently being used on [FSPMaps.com](http://fspmaps.com).
+
+Demos
+-----
+
+* [Showing categorical Donuts](http://spatialdev.github.io/q-cluster/demo/index.html)
+* [Basic Demo](http://spatialdev.github.io/q-cluster/demo/demo-geojson.html)
